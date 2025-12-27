@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TaskCard } from '@/components/tasks/TaskCard';
-import { mockTasks } from '@/data/mockData';
-import { Difficulty, Language } from '@/types';
+import { useTasks } from '@/hooks/useTasks';
 
-const difficulties: { value: Difficulty | 'all'; label: string }[] = [
+type Difficulty = 'easy' | 'medium' | 'hard' | 'all';
+type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'all';
+
+const difficulties: { value: Difficulty; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
   { value: 'hard', label: 'Hard' },
 ];
 
-const languages: { value: Language | 'all'; label: string }[] = [
+const languages: { value: Language; label: string }[] = [
   { value: 'all', label: 'Все языки' },
   { value: 'javascript', label: 'JavaScript' },
   { value: 'typescript', label: 'TypeScript' },
@@ -25,11 +27,13 @@ const languages: { value: Language | 'all'; label: string }[] = [
 
 export default function Tasks() {
   const [search, setSearch] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all');
-  const [selectedLanguage, setSelectedLanguage] = useState<Language | 'all'>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('all');
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const filteredTasks = mockTasks.filter((task) => {
+  const { data: tasks, isLoading, error } = useTasks();
+
+  const filteredTasks = (tasks || []).filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase()) ||
       task.description.toLowerCase().includes(search.toLowerCase());
     const matchesDifficulty = selectedDifficulty === 'all' || task.difficulty === selectedDifficulty;
@@ -126,37 +130,56 @@ export default function Tasks() {
           )}
         </motion.div>
 
-        {/* Results count */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <p className="text-sm text-muted-foreground">
-            Найдено заданий: <span className="font-semibold text-foreground">{filteredTasks.length}</span>
-          </p>
-        </motion.div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
 
-        {/* Tasks Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTasks.map((task, index) => (
-            <TaskCard key={task.id} task={task} index={index} />
-          ))}
-        </div>
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-16">
+            <p className="text-destructive">Ошибка загрузки заданий</p>
+          </div>
+        )}
 
-        {filteredTasks.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">Задания не найдены</h3>
-            <p className="text-muted-foreground">
-              Попробуйте изменить параметры поиска или фильтры
-            </p>
-          </motion.div>
+        {/* Results */}
+        {!isLoading && !error && (
+          <>
+            {/* Results count */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mb-6"
+            >
+              <p className="text-sm text-muted-foreground">
+                Найдено заданий: <span className="font-semibold text-foreground">{filteredTasks.length}</span>
+              </p>
+            </motion.div>
+
+            {/* Tasks Grid */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTasks.map((task, index) => (
+                <TaskCard key={task.id} task={task} index={index} />
+              ))}
+            </div>
+
+            {filteredTasks.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-16"
+              >
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold mb-2">Задания не найдены</h3>
+                <p className="text-muted-foreground">
+                  Попробуйте изменить параметры поиска или фильтры
+                </p>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
     </div>
