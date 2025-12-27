@@ -1,31 +1,87 @@
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  User, 
   Award, 
   CheckCircle, 
   Flame, 
   Star, 
-  Calendar,
   TrendingUp,
   Code2,
-  Shield
+  Shield,
+  User as UserIcon,
+  Loader2,
+  LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { LevelBadge } from '@/components/common/Badges';
-import { mockUser } from '@/data/mockData';
+import { LevelBadge, StatusBadge } from '@/components/common/Badges';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useUserBadges } from '@/hooks/useBadges';
+import { useUserSolutions } from '@/hooks/useSolutions';
 
 export default function Profile() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: userBadges } = useUserBadges();
+  const { data: solutions } = useUserSolutions();
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background py-24">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-xl mx-auto text-center"
+          >
+            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
+              <LogIn className="w-10 h-10 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold mb-4">Войдите в аккаунт</h1>
+            <p className="text-muted-foreground mb-8">
+              Чтобы просмотреть профиль, необходимо войти в аккаунт.
+            </p>
+            <Link to="/auth">
+              <Button variant="gradient" size="lg">
+                Войти
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-background py-24 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background py-24">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-muted-foreground">Профиль не найден</p>
+        </div>
+      </div>
+    );
+  }
+
   const levelProgress = {
     beginner: { current: 0, next: 25, label: 'Ревьюер' },
     reviewer: { current: 25, next: 100, label: 'Эксперт' },
     expert: { current: 100, next: 100, label: 'Максимум' },
   };
 
-  const progress = levelProgress[mockUser.level];
-  const progressPercent = mockUser.level === 'expert' 
+  const progress = levelProgress[profile.level];
+  const progressPercent = profile.level === 'expert' 
     ? 100 
-    : ((mockUser.reviewsCompleted - progress.current) / (progress.next - progress.current)) * 100;
+    : ((profile.reviews_completed - progress.current) / (progress.next - progress.current)) * 100;
 
   return (
     <div className="min-h-screen bg-background py-24">
@@ -44,8 +100,8 @@ export default function Profile() {
               <div className="relative">
                 <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-background shadow-xl">
                   <img
-                    src={mockUser.avatar}
-                    alt={mockUser.nickname}
+                    src={profile.avatar_url}
+                    alt={profile.nickname}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -57,11 +113,11 @@ export default function Profile() {
               {/* Info */}
               <div className="text-center sm:text-left flex-1">
                 <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold">{mockUser.nickname}</h1>
-                  <LevelBadge level={mockUser.level} />
+                  <h1 className="text-3xl font-bold">{profile.nickname}</h1>
+                  <LevelBadge level={profile.level} />
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  Участник с {mockUser.joinedAt.toLocaleDateString('ru-RU', { 
+                  Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { 
                     month: 'long', 
                     year: 'numeric' 
                   })}
@@ -69,21 +125,16 @@ export default function Profile() {
                 <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
                   <div className="flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-warning" />
-                    <span className="font-semibold">{mockUser.streak}</span>
+                    <span className="font-semibold">{profile.streak}</span>
                     <span className="text-muted-foreground">дней подряд</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-accent" />
-                    <span className="font-semibold">{mockUser.badges.length}</span>
+                    <span className="font-semibold">{userBadges?.length || 0}</span>
                     <span className="text-muted-foreground">бейджей</span>
                   </div>
                 </div>
               </div>
-
-              {/* Edit Button */}
-              <Button variant="outline" className="shrink-0">
-                Редактировать
-              </Button>
             </div>
           </div>
         </motion.div>
@@ -94,28 +145,28 @@ export default function Profile() {
             {
               icon: Star,
               label: 'Рейтинг доверия',
-              value: `${mockUser.trustRating}%`,
+              value: `${profile.trust_rating}%`,
               color: 'text-warning',
               bgColor: 'bg-warning/10',
             },
             {
               icon: CheckCircle,
               label: 'Проверок выполнено',
-              value: mockUser.reviewsCompleted,
+              value: profile.reviews_completed,
               color: 'text-success',
               bgColor: 'bg-success/10',
             },
             {
               icon: Code2,
               label: 'Баланс проверок',
-              value: mockUser.reviewBalance,
+              value: profile.review_balance,
               color: 'text-primary',
               bgColor: 'bg-primary/10',
             },
             {
               icon: TrendingUp,
-              label: 'Позиция в рейтинге',
-              value: '#4',
+              label: 'Решений отправлено',
+              value: solutions?.length || 0,
               color: 'text-accent',
               bgColor: 'bg-accent/10',
             },
@@ -148,10 +199,10 @@ export default function Profile() {
             
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <LevelBadge level={mockUser.level} />
-                {mockUser.level !== 'expert' && (
+                <LevelBadge level={profile.level} />
+                {profile.level !== 'expert' && (
                   <span className="text-sm text-muted-foreground">
-                    До уровня {progress.label}: {progress.next - mockUser.reviewsCompleted} проверок
+                    До уровня {progress.label}: {progress.next - profile.reviews_completed} проверок
                   </span>
                 )}
               </div>
@@ -159,32 +210,32 @@ export default function Profile() {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Прогресс</span>
-                  <span className="font-medium">{Math.round(progressPercent)}%</span>
+                  <span className="font-medium">{Math.round(Math.max(0, progressPercent))}%</span>
                 </div>
-                <Progress value={progressPercent} className="h-3" />
+                <Progress value={Math.max(0, progressPercent)} className="h-3" />
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
                 {[
-                  { level: 'Новичок', threshold: 0, icon: User },
+                  { level: 'Новичок', threshold: 0, icon: UserIcon },
                   { level: 'Ревьюер', threshold: 25, icon: Shield },
                   { level: 'Эксперт', threshold: 100, icon: Award },
-                ].map((item, index) => (
+                ].map((item) => (
                   <div
                     key={item.level}
                     className={`text-center p-3 rounded-lg ${
-                      mockUser.reviewsCompleted >= item.threshold
+                      profile.reviews_completed >= item.threshold
                         ? 'bg-primary/10'
                         : 'bg-muted/50'
                     }`}
                   >
                     <item.icon className={`w-5 h-5 mx-auto mb-2 ${
-                      mockUser.reviewsCompleted >= item.threshold
+                      profile.reviews_completed >= item.threshold
                         ? 'text-primary'
                         : 'text-muted-foreground'
                     }`} />
                     <div className={`text-xs font-medium ${
-                      mockUser.reviewsCompleted >= item.threshold
+                      profile.reviews_completed >= item.threshold
                         ? 'text-foreground'
                         : 'text-muted-foreground'
                     }`}>
@@ -209,31 +260,31 @@ export default function Profile() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Достижения</h2>
               <span className="text-sm text-muted-foreground">
-                {mockUser.badges.length} из 15
+                {userBadges?.length || 0} из 8
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              {mockUser.badges.map((badge, index) => (
+              {userBadges?.map((userBadge, index) => (
                 <motion.div
-                  key={badge.id}
+                  key={userBadge.id}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
                   className="p-4 rounded-xl bg-muted/50 text-center group hover:bg-primary/10 transition-colors cursor-pointer"
                 >
                   <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
-                    {badge.icon}
+                    {userBadge.badges.icon}
                   </div>
-                  <div className="text-sm font-medium mb-1">{badge.name}</div>
+                  <div className="text-sm font-medium mb-1">{userBadge.badges.name}</div>
                   <div className="text-xs text-muted-foreground line-clamp-2">
-                    {badge.description}
+                    {userBadge.badges.description}
                   </div>
                 </motion.div>
               ))}
               
               {/* Locked badges */}
-              {Array.from({ length: 6 - mockUser.badges.length }).map((_, index) => (
+              {Array.from({ length: Math.max(0, 6 - (userBadges?.length || 0)) }).map((_, index) => (
                 <div
                   key={`locked-${index}`}
                   className="p-4 rounded-xl bg-muted/30 text-center opacity-50"
@@ -249,46 +300,42 @@ export default function Profile() {
           </motion.div>
         </div>
 
-        {/* Activity History */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 p-6 rounded-xl bg-card border border-border"
-        >
-          <h2 className="text-xl font-semibold mb-6">Недавняя активность</h2>
-          
-          <div className="space-y-4">
-            {[
-              { action: 'Проверили решение', task: 'Палиндром', time: '2 часа назад', type: 'review' },
-              { action: 'Отправили решение', task: 'Сортировка массива', time: '5 часов назад', type: 'submit' },
-              { action: 'Получили бейдж', task: 'Серия 7', time: '1 день назад', type: 'badge' },
-              { action: 'Решение принято', task: 'CSS Flexbox Layout', time: '2 дня назад', type: 'accepted' },
-            ].map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  activity.type === 'review' ? 'bg-primary/10 text-primary' :
-                  activity.type === 'submit' ? 'bg-accent/10 text-accent' :
-                  activity.type === 'badge' ? 'bg-warning/10 text-warning' :
-                  'bg-success/10 text-success'
-                }`}>
-                  {activity.type === 'review' ? <CheckCircle className="w-5 h-5" /> :
-                   activity.type === 'submit' ? <Code2 className="w-5 h-5" /> :
-                   activity.type === 'badge' ? <Award className="w-5 h-5" /> :
-                   <Star className="w-5 h-5" />}
+        {/* My Solutions */}
+        {solutions && solutions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-8 p-6 rounded-xl bg-card border border-border"
+          >
+            <h2 className="text-xl font-semibold mb-6">Мои решения</h2>
+            
+            <div className="space-y-4">
+              {solutions.slice(0, 5).map((solution) => (
+                <div
+                  key={solution.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <Code2 className="w-5 h-5 text-primary" />
+                    <div>
+                      <div className="font-medium">Решение #{solution.id.slice(0, 8)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(solution.created_at).toLocaleDateString('ru-RU')}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-muted-foreground">
+                      {solution.reviews_count}/3 проверок
+                    </div>
+                    <StatusBadge status={solution.status} />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="font-medium">{activity.action}</div>
-                  <div className="text-sm text-muted-foreground">{activity.task}</div>
-                </div>
-                <div className="text-sm text-muted-foreground">{activity.time}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

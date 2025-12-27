@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-import { ArrowLeft, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Send, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
-import { mockTasks, mockUser } from '@/data/mockData';
+import { useTask } from '@/hooks/useTasks';
+import { useSubmitSolution } from '@/hooks/useSolutions';
+import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const languageToMonaco: Record<string, string> = {
@@ -20,9 +23,21 @@ const languageToMonaco: Record<string, string> = {
 
 export default function TaskDetail() {
   const { id } = useParams();
-  const task = mockTasks.find((t) => t.id === id);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: task, isLoading: taskLoading } = useTask(id || '');
+  const { data: profile } = useProfile();
+  const submitSolution = useSubmitSolution();
+  
   const [code, setCode] = useState('// Напишите ваше решение здесь\n\n');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (taskLoading) {
+    return (
+      <div className="min-h-screen bg-background py-24 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!task) {
     return (
@@ -40,9 +55,15 @@ export default function TaskDetail() {
     );
   }
 
-  const canSubmit = mockUser.reviewBalance > 0;
+  const canSubmit = user && (profile?.review_balance ?? 0) > 0;
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error('Необходимо войти в аккаунт');
+      navigate('/auth');
+      return;
+    }
+
     if (!canSubmit) {
       toast.error('Недостаточно баллов проверки. Сначала проверьте чужое решение.');
       return;
@@ -53,16 +74,15 @@ export default function TaskDetail() {
       return;
     }
 
-    setIsSubmitting(true);
-    
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast.success('Решение отправлено на проверку!', {
-      description: 'Списан 1 балл проверки. Ожидайте результата.',
-    });
-    
-    setIsSubmitting(false);
+    try {
+      await submitSolution.mutateAsync({ taskId: task.id, code });
+      toast.success('Решение отправлено на проверку!', {
+        description: 'Списан 1 балл проверки. Ожидайте результата.',
+      });
+      navigate('/profile');
+    } catch (error: any) {
+      toast.error(error.message || 'Ошибка при отправке решения');
+    }
   };
 
   return (
@@ -118,8 +138,34 @@ export default function TaskDetail() {
               </ul>
             </div>
 
+            {/* Auth Warning */}
+            {!user && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 rounded-xl bg-primary/10 border border-primary/20"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-primary mb-1">
+                      Войдите в аккаунт
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Чтобы отправить решение, необходимо войти в аккаунт.
+                    </p>
+                    <Link to="/auth" className="inline-block mt-2">
+                      <Button variant="default" size="sm">
+                        Войти
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Review Balance Warning */}
-            {!canSubmit && (
+            {user && !canSubmit && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -154,10 +200,12 @@ export default function TaskDetail() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Ваше решение</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                Баланс: {mockUser.reviewBalance} балл(ов)
-              </div>
+              {user && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  Баланс: {profile?.review_balance ?? 0} балл(ов)
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl overflow-hidden border border-border">
@@ -182,11 +230,11 @@ export default function TaskDetail() {
               size="lg"
               className="w-full"
               onClick={handleSubmit}
-              disabled={!canSubmit || isSubmitting}
+              disabled={!user || !canSubmit || submitSolution.isPending}
             >
-              {isSubmitting ? (
+              {submitSolution.isPending ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Отправка...
                 </>
               ) : (

@@ -1,9 +1,11 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 const navItems = [
   { path: '/', label: 'Главная', icon: Home },
@@ -15,7 +17,15 @@ const navItems = [
 
 export function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const { data: profile } = useProfile();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -63,15 +73,36 @@ export function Navbar() {
             })}
           </div>
 
-          {/* Review Balance */}
+          {/* Auth Section */}
           <div className="hidden md:flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm font-medium">3 балла</span>
-            </div>
-            <Button variant="gradient" size="sm">
-              Войти
-            </Button>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-medium">{profile?.review_balance ?? 0} балл(ов)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link to="/profile">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-border">
+                      <img 
+                        src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
+                        alt={profile?.nickname || 'User'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="gradient" size="sm">
+                  Войти
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,9 +145,24 @@ export function Navbar() {
                 );
               })}
               <div className="pt-4 mt-2 border-t border-border">
-                <Button variant="gradient" className="w-full">
-                  Войти
-                </Button>
+                {user ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-4">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span className="text-sm">{profile?.review_balance ?? 0} балл(ов)</span>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Выйти
+                    </Button>
+                  </div>
+                ) : (
+                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="gradient" className="w-full">
+                      Войти
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

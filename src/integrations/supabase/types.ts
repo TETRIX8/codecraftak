@@ -14,7 +14,301 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appeals: {
+        Row: {
+          created_at: string | null
+          id: string
+          reason: string
+          resolution_comment: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          solution_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reason: string
+          resolution_comment?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          solution_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reason?: string
+          resolution_comment?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          solution_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appeals_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appeals_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appeals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      badges: {
+        Row: {
+          description: string
+          icon: string
+          id: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+        }
+        Insert: {
+          description: string
+          icon: string
+          id?: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+        }
+        Update: {
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string
+          last_activity_date: string | null
+          level: Database["public"]["Enums"]["user_level"] | null
+          nickname: string
+          review_balance: number | null
+          reviews_completed: number | null
+          streak: number | null
+          trust_rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id: string
+          last_activity_date?: string | null
+          level?: Database["public"]["Enums"]["user_level"] | null
+          nickname: string
+          review_balance?: number | null
+          reviews_completed?: number | null
+          streak?: number | null
+          trust_rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          last_activity_date?: string | null
+          level?: Database["public"]["Enums"]["user_level"] | null
+          nickname?: string
+          review_balance?: number | null
+          reviews_completed?: number | null
+          streak?: number | null
+          trust_rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string
+          created_at: string | null
+          id: string
+          reviewer_id: string
+          solution_id: string
+          verdict: Database["public"]["Enums"]["review_verdict"]
+          weight: number | null
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          id?: string
+          reviewer_id: string
+          solution_id: string
+          verdict: Database["public"]["Enums"]["review_verdict"]
+          weight?: number | null
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          id?: string
+          reviewer_id?: string
+          solution_id?: string
+          verdict?: Database["public"]["Enums"]["review_verdict"]
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solutions: {
+        Row: {
+          accepted_votes: number | null
+          code: string
+          created_at: string | null
+          id: string
+          rejected_votes: number | null
+          reviews_count: number | null
+          status: Database["public"]["Enums"]["solution_status"] | null
+          task_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_votes?: number | null
+          code: string
+          created_at?: string | null
+          id?: string
+          rejected_votes?: number | null
+          reviews_count?: number | null
+          status?: Database["public"]["Enums"]["solution_status"] | null
+          task_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_votes?: number | null
+          code?: string
+          created_at?: string | null
+          id?: string
+          rejected_votes?: number | null
+          reviews_count?: number | null
+          status?: Database["public"]["Enums"]["solution_status"] | null
+          task_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completions: number | null
+          created_at: string | null
+          description: string
+          difficulty: Database["public"]["Enums"]["difficulty"]
+          id: string
+          language: Database["public"]["Enums"]["programming_language"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          completions?: number | null
+          created_at?: string | null
+          description: string
+          difficulty: Database["public"]["Enums"]["difficulty"]
+          id?: string
+          language: Database["public"]["Enums"]["programming_language"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          completions?: number | null
+          created_at?: string | null
+          description?: string
+          difficulty?: Database["public"]["Enums"]["difficulty"]
+          id?: string
+          language?: Database["public"]["Enums"]["programming_language"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +317,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      difficulty: "easy" | "medium" | "hard"
+      programming_language:
+        | "javascript"
+        | "typescript"
+        | "python"
+        | "html"
+        | "css"
+        | "java"
+        | "cpp"
+      review_verdict: "accepted" | "rejected"
+      solution_status: "pending" | "accepted" | "rejected"
+      user_level: "beginner" | "reviewer" | "expert"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +455,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      difficulty: ["easy", "medium", "hard"],
+      programming_language: [
+        "javascript",
+        "typescript",
+        "python",
+        "html",
+        "css",
+        "java",
+        "cpp",
+      ],
+      review_verdict: ["accepted", "rejected"],
+      solution_status: ["pending", "accepted", "rejected"],
+      user_level: ["beginner", "reviewer", "expert"],
+    },
   },
 } as const

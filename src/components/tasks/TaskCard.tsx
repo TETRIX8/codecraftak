@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Task } from '@/types';
 import { DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
 import { Users, ArrowRight } from 'lucide-react';
+import { Task } from '@/hooks/useTasks';
 
 interface TaskCardProps {
   task: Task;
