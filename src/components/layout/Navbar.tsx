@@ -39,11 +39,13 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Code2 className="w-5 h-5 text-primary-foreground" />
+                <Code2 className="w-5 h-5 text-background" />
               </div>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-accent opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
             </div>
-            <span className="text-xl font-bold gradient-text hidden sm:block">CodeReview</span>
+            <span className="text-xl font-bold hidden sm:block">
+              Code<span className="gradient-text">⚡Craft</span>
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
