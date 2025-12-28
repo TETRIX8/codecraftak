@@ -16,6 +16,7 @@ import Admin from "./pages/Admin";
 import Users from "./pages/Users";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
+import Topics from "./pages/Topics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/users" element={<Users />} />
               <Route path="/users/:id" element={<UserProfile />} />
               <Route path="/messages" element={<Messages />} />
+              <Route path="/topics" element={<Topics />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

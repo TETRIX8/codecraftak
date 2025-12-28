@@ -15,6 +15,7 @@ import { useIsAdmin } from '@/hooks/useRoles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AdminNotifications } from '@/components/admin/AdminNotifications';
+import { AdminTopics } from '@/components/admin/AdminTopics';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -168,6 +169,11 @@ export default function Admin() {
         {/* Notifications Section */}
         <div className="mb-8">
           <AdminNotifications />
+        </div>
+
+        {/* Topics Section */}
+        <div className="mb-8">
+          <AdminTopics />
         </div>
 
         <motion.div
