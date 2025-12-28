@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Award, 
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { LevelBadge, StatusBadge } from '@/components/common/Badges';
+import { LevelBadge } from '@/components/common/Badges';
+import { SolutionCard } from '@/components/solutions/SolutionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserBadges } from '@/hooks/useBadges';
@@ -22,7 +23,6 @@ import { useUserSolutions } from '@/hooks/useSolutions';
 
 export default function Profile() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: userBadges } = useUserBadges();
   const { data: solutions } = useUserSolutions();
@@ -306,32 +306,13 @@ export default function Profile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="mt-8 p-6 rounded-xl bg-card border border-border"
+            className="mt-8"
           >
             <h2 className="text-xl font-semibold mb-6">Мои решения</h2>
             
             <div className="space-y-4">
-              {solutions.slice(0, 5).map((solution) => (
-                <div
-                  key={solution.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <Code2 className="w-5 h-5 text-primary" />
-                    <div>
-                      <div className="font-medium">Решение #{solution.id.slice(0, 8)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(solution.created_at).toLocaleDateString('ru-RU')}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm text-muted-foreground">
-                      {solution.reviews_count}/3 проверок
-                    </div>
-                    <StatusBadge status={solution.status} />
-                  </div>
-                </div>
+              {solutions.map((solution) => (
+                <SolutionCard key={solution.id} solution={solution} />
               ))}
             </div>
           </motion.div>
