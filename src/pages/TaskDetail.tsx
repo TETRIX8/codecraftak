@@ -5,6 +5,7 @@ import Editor from '@monaco-editor/react';
 import { ArrowLeft, Send, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
+import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { useTask } from '@/hooks/useTasks';
 import { useSubmitSolution } from '@/hooks/useSolutions';
 import { useProfile } from '@/hooks/useProfile';
@@ -115,9 +116,7 @@ export default function TaskDetail() {
                 <LanguageBadge language={task.language} />
               </div>
               <h1 className="text-3xl font-bold mb-4">{task.title}</h1>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                {task.description}
-              </p>
+              <MarkdownContent content={task.description} />
             </div>
 
             <div className="p-4 rounded-xl bg-card border border-border">

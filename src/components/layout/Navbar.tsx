@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useIsAdmin } from '@/hooks/useRoles';
 
 const navItems = [
   { path: '/', label: 'Главная', icon: Home },
@@ -21,6 +22,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
     await signOut();
@@ -77,6 +79,14 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             {user ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Админ
+                    </Button>
+                  </Link>
+                )}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span className="text-sm font-medium">{profile?.review_balance ?? 0} балл(ов)</span>
@@ -147,6 +157,14 @@ export function Navbar() {
               <div className="pt-4 mt-2 border-t border-border">
                 {user ? (
                   <div className="space-y-3">
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Админ-панель
+                        </Button>
+                      </Link>
+                    )}
                     <div className="flex items-center gap-2 px-4">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                       <span className="text-sm">{profile?.review_balance ?? 0} балл(ов)</span>
