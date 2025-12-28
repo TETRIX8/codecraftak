@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,8 @@ const navItems = [
   { path: '/', label: 'Главная', icon: Home },
   { path: '/tasks', label: 'Задания', icon: ListTodo },
   { path: '/review', label: 'Проверка', icon: CheckSquare },
+  { path: '/users', label: 'Участники', icon: Users },
+  { path: '/messages', label: 'Чаты', icon: MessageSquare },
   { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
   { path: '/profile', label: 'Профиль', icon: User },
 ];

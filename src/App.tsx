@@ -13,6 +13,9 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Users from "./pages/Users";
+import UserProfile from "./pages/UserProfile";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/users/:id" element={<UserProfile />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
