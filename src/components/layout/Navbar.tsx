@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useIsAdmin } from '@/hooks/useRoles';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
   { path: '/', label: 'Главная', icon: Home },
@@ -91,6 +92,7 @@ export function Navbar() {
                     </Button>
                   </Link>
                 )}
+                <NotificationBell />
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span className="text-sm font-medium">{profile?.review_balance ?? 0} балл(ов)</span>
