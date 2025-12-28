@@ -14,6 +14,7 @@ import { useTasks, Task } from '@/hooks/useTasks';
 import { useIsAdmin } from '@/hooks/useRoles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AdminNotifications } from '@/components/admin/AdminNotifications';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -164,6 +165,11 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-background py-24">
       <div className="container mx-auto px-4">
+        {/* Notifications Section */}
+        <div className="mb-8">
+          <AdminNotifications />
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -171,8 +177,8 @@ export default function Admin() {
         >
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Админ-панель</h1>
-              <p className="text-muted-foreground">Управление заданиями</p>
+              <h1 className="text-3xl font-bold mb-2">Управление заданиями</h1>
+              <p className="text-muted-foreground">Создание и редактирование заданий</p>
             </div>
             
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
