@@ -42,6 +42,24 @@ export function useSolutions(taskId?: string) {
   });
 }
 
+export interface SolutionWithTask extends Solution {
+  tasks: {
+    id: string;
+    title: string;
+    description: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    language: string;
+  };
+}
+
+export interface ReviewWithReviewer extends Review {
+  profiles: {
+    nickname: string;
+    avatar_url: string;
+    level: string;
+  };
+}
+
 export function useUserSolutions() {
   const { user } = useAuth();
 
@@ -52,14 +70,86 @@ export function useUserSolutions() {
       
       const { data, error } = await supabase
         .from('solutions')
-        .select('*')
+        .select('*, tasks(id, title, description, difficulty, language)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Solution[];
+      return data as SolutionWithTask[];
     },
     enabled: !!user?.id,
+  });
+}
+
+export function useSolutionReviews(solutionId: string) {
+  return useQuery({
+    queryKey: ['solution-reviews', solutionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*, profiles(nickname, avatar_url, level)')
+        .eq('solution_id', solutionId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ReviewWithReviewer[];
+    },
+    enabled: !!solutionId,
+  });
+}
+
+export function useResubmitSolution() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ solutionId, code }: { solutionId: string; code: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      // Check review balance
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('review_balance')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || profile.review_balance < 1) {
+        throw new Error('Недостаточно баллов проверки');
+      }
+
+      // Update solution with new code and reset status
+      const { data: solution, error: solutionError } = await supabase
+        .from('solutions')
+        .update({
+          code,
+          status: 'pending',
+          reviews_count: 0,
+          accepted_votes: 0,
+          rejected_votes: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', solutionId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (solutionError) throw solutionError;
+
+      // Deduct review balance
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ review_balance: profile.review_balance - 1 })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      return solution;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['solutions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-solutions'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
   });
 }
 
