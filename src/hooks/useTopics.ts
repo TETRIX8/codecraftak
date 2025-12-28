@@ -43,6 +43,30 @@ export function useTopics(category?: string) {
   });
 }
 
+export function useIncrementViews() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Get current views count first
+      const { data: topic } = await supabase
+        .from('topics')
+        .select('views_count')
+        .eq('id', id)
+        .single();
+      
+      // Increment views
+      await supabase
+        .from('topics')
+        .update({ views_count: (topic?.views_count || 0) + 1 })
+        .eq('id', id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['topics'] });
+    },
+  });
+}
+
 export function useTopic(id: string) {
   return useQuery({
     queryKey: ['topic', id],
