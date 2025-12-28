@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { LevelBadge } from '@/components/common/Badges';
 import { SolutionCard } from '@/components/solutions/SolutionCard';
+import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserBadges } from '@/hooks/useBadges';
@@ -115,6 +116,7 @@ export default function Profile() {
                 <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
                   <h1 className="text-3xl font-bold">{profile.nickname}</h1>
                   <LevelBadge level={profile.level} />
+                  <EditProfileDialog profile={profile} />
                 </div>
                 <p className="text-muted-foreground mb-4">
                   Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { 
