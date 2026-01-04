@@ -248,25 +248,36 @@ export function useCreatePrivateChat() {
       }
 
       // Create new chat
-      const { data: chat, error: chatError } = await supabase
+      // NOTE: We intentionally do NOT request `return=representation` here,
+      // because the newly created chat isn't visible via SELECT until the creator
+      // is added as a participant (RLS on `chats`).
+      const chatId = crypto.randomUUID();
+
+      const { error: chatError } = await supabase
         .from('chats')
-        .insert({ type: 'private' })
-        .select()
-        .single();
+        .insert({ id: chatId, type: 'private' });
 
       if (chatError) throw chatError;
 
-      // Add both participants
-      const { error: participantsError } = await supabase
+      // Add creator first (so they become a participant)
+      const { error: selfParticipantError } = await supabase
         .from('chat_participants')
-        .insert([
-          { chat_id: chat.id, user_id: user.id },
-          { chat_id: chat.id, user_id: otherUserId },
-        ]);
+        .insert({ chat_id: chatId, user_id: user.id });
 
-      if (participantsError) throw participantsError;
+      if (selfParticipantError) throw selfParticipantError;
 
-      return chat;
+      // Then add the other user
+      const { error: otherParticipantError } = await supabase
+        .from('chat_participants')
+        .insert({ chat_id: chatId, user_id: otherUserId });
+
+      if (otherParticipantError) throw otherParticipantError;
+
+      return {
+        id: chatId,
+        type: 'private',
+        created_at: new Date().toISOString(),
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['private-chats'] });
