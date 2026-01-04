@@ -17,6 +17,7 @@ import Users from "./pages/Users";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import Topics from "./pages/Topics";
+import Games from "./pages/Games";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/users/:id" element={<UserProfile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/topics" element={<Topics />} />
+              <Route path="/games" element={<Games />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
