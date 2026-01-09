@@ -153,6 +153,70 @@ export type Database = {
         }
         Relationships: []
       }
+      games: {
+        Row: {
+          bet_amount: number
+          created_at: string
+          creator_id: string
+          current_turn: string | null
+          game_state: Json | null
+          game_type: string
+          id: string
+          opponent_id: string | null
+          status: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          bet_amount?: number
+          created_at?: string
+          creator_id: string
+          current_turn?: string | null
+          game_state?: Json | null
+          game_type: string
+          id?: string
+          opponent_id?: string | null
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string
+          creator_id?: string
+          current_turn?: string | null
+          game_state?: Json | null
+          game_type?: string
+          id?: string
+          opponent_id?: string | null
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_id: string
