@@ -238,8 +238,8 @@ export function useGames() {
       if (updateError) throw updateError;
 
       // Update game state with opponent
-      const gameState = (game.game_state as Record<string, unknown>) || {};
-      let updatedState: Json = { ...gameState };
+      const gameState = (game.game_state as Record<string, Json>) || {};
+      let updatedState: Record<string, Json> = { ...gameState };
       
       if (game.game_type === 'tic-tac-toe') {
         const symbols = (gameState.symbols as Record<string, string>) || {};
