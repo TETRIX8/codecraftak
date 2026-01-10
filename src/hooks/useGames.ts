@@ -256,21 +256,32 @@ export function useGames() {
         };
       }
 
-      const { error } = await supabase
+      const { data: updatedGame, error } = await supabase
         .from('games')
         .update({
           opponent_id: user.id,
           status: 'playing',
           game_state: updatedState
         })
-        .eq('id', gameId);
+        .eq('id', gameId)
+        .select(`
+          *,
+          creator:profiles!games_creator_id_fkey(nickname, avatar_url),
+          opponent:profiles!games_opponent_id_fkey(nickname, avatar_url)
+        `)
+        .single();
 
       if (error) throw error;
+
+      // Set the game directly to ensure UI updates
+      if (updatedGame) {
+        const parsedGame = parseGameRow(updatedGame as GameRow);
+        setCurrentGame(parsedGame);
+      }
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Вы присоединились к игре!');
       
-      await fetchCurrentGame(gameId);
       return true;
     } catch (error) {
       console.error('Error joining game:', error);
