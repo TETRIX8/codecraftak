@@ -1,19 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useTopics, useIncrementViews, Topic } from '@/hooks/useTopics';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTopics, Topic } from '@/hooks/useTopics';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MarkdownContent } from '@/components/common/MarkdownContent';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   BookOpen, 
   Search, 
   Eye, 
   Calendar, 
-  User, 
-  ArrowLeft,
   Code,
   Lightbulb,
   Puzzle,
@@ -103,81 +100,14 @@ function TopicCard({ topic, onClick }: { topic: Topic; onClick: () => void }) {
   );
 }
 
-function TopicView({ topic, onClose, viewsCount }: { topic: Topic; onClose: () => void; viewsCount: number }) {
-  const category = CATEGORIES.find(c => c.value === topic.category) || CATEGORIES[CATEGORIES.length - 1];
-  const Icon = category.icon;
-
-  return (
-    <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 w-[95vw] sm:w-auto">
-      <div className={`p-4 sm:p-6 border-b border-border/50 bg-gradient-to-r ${category.color.replace('text-', 'from-').replace('/20', '/10')} to-transparent`}>
-        <Button variant="ghost" size="sm" onClick={onClose} className="mb-3 sm:mb-4 -ml-2">
-          <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">Назад к темам</span>
-          <span className="sm:hidden">Назад</span>
-        </Button>
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className={`p-3 sm:p-4 rounded-xl ${category.color} shrink-0`}>
-            <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <Badge variant="outline" className="mb-2 text-[10px] sm:text-xs">
-              {category.label}
-            </Badge>
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-2xl font-bold leading-tight">{topic.title}</DialogTitle>
-            </DialogHeader>
-            {topic.description && (
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2 sm:line-clamp-none">{topic.description}</p>
-            )}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
-              {topic.author && (
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <Avatar className="h-4 w-4 sm:h-5 sm:w-5">
-                    <AvatarImage src={topic.author.avatar_url || ''} />
-                    <AvatarFallback className="text-[8px] sm:text-xs">
-                      {topic.author.nickname.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="truncate max-w-[80px] sm:max-w-none">{topic.author.nickname}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1">
-                <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {viewsCount} просм.
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {new Date(topic.created_at).toLocaleDateString('ru-RU', { 
-                  day: 'numeric', 
-                  month: 'short'
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <ScrollArea className="max-h-[55vh] sm:max-h-[60vh]">
-        <div className="p-4 sm:p-6">
-          <MarkdownContent content={topic.content} />
-        </div>
-      </ScrollArea>
-    </DialogContent>
-  );
-}
-
 export default function Topics() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const [currentViewsCount, setCurrentViewsCount] = useState(0);
   const { data: topics, isLoading } = useTopics(selectedCategory);
-  const incrementViews = useIncrementViews();
+  const navigate = useNavigate();
 
   const handleOpenTopic = (topic: Topic) => {
-    setSelectedTopic(topic);
-    setCurrentViewsCount((topic.views_count || 0) + 1);
-    incrementViews.mutate(topic.id);
+    navigate(`/topics/${topic.id}`);
   };
 
   const filteredTopics = topics?.filter(topic => 
@@ -286,12 +216,6 @@ export default function Topics() {
         )}
       </div>
 
-      {/* Topic View Dialog */}
-      <Dialog open={!!selectedTopic} onOpenChange={(open) => !open && setSelectedTopic(null)}>
-        {selectedTopic && (
-          <TopicView topic={selectedTopic} onClose={() => setSelectedTopic(null)} viewsCount={currentViewsCount} />
-        )}
-      </Dialog>
     </div>
   );
 }
