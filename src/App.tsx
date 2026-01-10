@@ -17,6 +17,7 @@ import Users from "./pages/Users";
 import UserProfile from "./pages/UserProfile";
 import Messages from "./pages/Messages";
 import Topics from "./pages/Topics";
+import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import NotFound from "./pages/NotFound";
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/users/:id" element={<UserProfile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/topics" element={<Topics />} />
+              <Route path="/topics/:id" element={<TopicDetail />} />
               <Route path="/games" element={<Games />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
