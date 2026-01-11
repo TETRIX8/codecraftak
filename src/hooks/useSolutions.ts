@@ -260,17 +260,26 @@ export function useSubmitReview() {
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Get current profile for weight calculation
+      // Get current profile for weight calculation and daily review limit
       const { data: profile } = await supabase
         .from('profiles')
-        .select('trust_rating, reviews_completed, review_balance')
+        .select('trust_rating, reviews_completed, review_balance, daily_reviews_count, last_review_date')
         .eq('id', user.id)
         .single();
 
       if (!profile) throw new Error('Profile not found');
 
+      // Check daily review limit
+      const today = new Date().toISOString().split('T')[0];
+      const lastReviewDate = profile.last_review_date;
+      const dailyCount = lastReviewDate === today ? (profile.daily_reviews_count || 0) : 0;
+
+      if (dailyCount >= 3) {
+        throw new Error('Лимит проверок на сегодня исчерпан (3 в день)');
+      }
+
       // Calculate weight based on trust rating
-      const weight = profile.trust_rating / 100;
+      const weight = (profile.trust_rating || 50) / 100;
 
       // Create review
       const { data: review, error: reviewError } = await supabase
@@ -287,13 +296,17 @@ export function useSubmitReview() {
 
       if (reviewError) throw reviewError;
 
-      // Update profile: increment review balance and reviews completed
+      // Update profile: increment review balance, reviews completed, and daily count
+      const newDailyCount = lastReviewDate === today ? dailyCount + 1 : 1;
+      
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          review_balance: profile.review_balance + 1,
-          reviews_completed: profile.reviews_completed + 1,
-          last_activity_date: new Date().toISOString().split('T')[0],
+          review_balance: (profile.review_balance || 0) + 1,
+          reviews_completed: (profile.reviews_completed || 0) + 1,
+          daily_reviews_count: newDailyCount,
+          last_review_date: today,
+          last_activity_date: today,
         })
         .eq('id', user.id);
 
@@ -306,5 +319,31 @@ export function useSubmitReview() {
       queryClient.invalidateQueries({ queryKey: ['pending-solution-for-review'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
+  });
+}
+
+// Hook to check remaining daily reviews
+export function useDailyReviewsRemaining() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['daily-reviews-remaining', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('daily_reviews_count, last_review_date')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile) return 3;
+
+      const today = new Date().toISOString().split('T')[0];
+      const dailyCount = profile.last_review_date === today ? (profile.daily_reviews_count || 0) : 0;
+      
+      return Math.max(0, 3 - dailyCount);
+    },
+    enabled: !!user?.id,
   });
 }

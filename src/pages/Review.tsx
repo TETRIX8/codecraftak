@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-import { CheckCircle, XCircle, AlertCircle, RefreshCw, Send, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, RefreshCw, Send, Loader2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
-import { usePendingSolutionForReview, useSubmitReview } from '@/hooks/useSolutions';
+import { usePendingSolutionForReview, useSubmitReview, useDailyReviewsRemaining } from '@/hooks/useSolutions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ export default function Review() {
   const navigate = useNavigate();
   
   const { data: solutionData, isLoading, refetch } = usePendingSolutionForReview();
+  const { data: remainingReviews, refetch: refetchRemaining } = useDailyReviewsRemaining();
   const submitReview = useSubmitReview();
 
   const handleSubmitReview = async () => {
@@ -50,6 +51,7 @@ export default function Review() {
         description: 'Вы получили +1 балл проверки. Спасибо за вклад!',
       });
       
+      refetchRemaining();
       setHasReviewed(true);
     } catch (error: any) {
       toast.error(error.message || 'Ошибка при отправке проверки');
@@ -107,6 +109,7 @@ export default function Review() {
                 setVerdict(null);
                 setComment('');
                 refetch();
+                refetchRemaining();
               }}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Проверить ещё
@@ -158,6 +161,7 @@ export default function Review() {
   }
 
   const task = solutionData.tasks as any;
+  const canReview = remainingReviews !== undefined && remainingReviews > 0;
 
   return (
     <div className="min-h-screen bg-background py-24">
@@ -167,12 +171,41 @@ export default function Review() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold mb-4">Проверка решения</h1>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h1 className="text-3xl font-bold">Проверка решения</h1>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary border border-border">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">
+                Осталось сегодня: <span className="text-primary">{remainingReviews ?? 3}</span> из 3
+              </span>
+            </div>
+          </div>
           <p className="text-muted-foreground">
             Внимательно изучите код и дайте объективную оценку. После проверки 
             вы получите +1 балл.
           </p>
         </motion.div>
+
+        {!canReview && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-xl mx-auto text-center py-12"
+          >
+            <div className="w-20 h-20 rounded-full bg-warning/20 flex items-center justify-center mx-auto mb-6">
+              <Clock className="w-10 h-10 text-warning" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4">Лимит исчерпан</h2>
+            <p className="text-muted-foreground mb-8">
+              Вы использовали все 3 проверки на сегодня. Возвращайтесь завтра!
+            </p>
+            <Button variant="gradient" onClick={() => navigate('/tasks')}>
+              Перейти к заданиям
+            </Button>
+          </motion.div>
+        )}
+
+        {canReview && (
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Task & Code */}
@@ -309,6 +342,7 @@ export default function Review() {
             </div>
           </motion.div>
         </div>
+        )}
       </div>
     </div>
   );

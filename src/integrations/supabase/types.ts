@@ -353,8 +353,10 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          daily_reviews_count: number | null
           id: string
           last_activity_date: string | null
+          last_review_date: string | null
           level: Database["public"]["Enums"]["user_level"] | null
           likes_received: number | null
           nickname: string
@@ -367,8 +369,10 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          daily_reviews_count?: number | null
           id: string
           last_activity_date?: string | null
+          last_review_date?: string | null
           level?: Database["public"]["Enums"]["user_level"] | null
           likes_received?: number | null
           nickname: string
@@ -381,8 +385,10 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          daily_reviews_count?: number | null
           id?: string
           last_activity_date?: string | null
+          last_review_date?: string | null
           level?: Database["public"]["Enums"]["user_level"] | null
           likes_received?: number | null
           nickname?: string
