@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useGames, GameType, Game } from '@/hooks/useGames';
+import { useGameInvites } from '@/hooks/useGameInvites';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserSelector } from '@/components/games/UserSelector';
+import { GameInviteCard } from '@/components/games/GameInviteCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Gamepad2, 
@@ -19,7 +22,9 @@ import {
   FileText,
   Loader2,
   ArrowLeft,
-  Crown
+  Crown,
+  Mail,
+  UserPlus
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
@@ -31,14 +36,25 @@ export default function Games() {
     currentGame, 
     isLoading, 
     createGame, 
-    joinGame, 
     makeMove, 
     cancelGame,
     leaveGame,
+    fetchCurrentGame,
     GAME_NAMES, 
     BET_AMOUNT, 
     WIN_REWARD 
   } = useGames();
+  
+  const { 
+    pendingInvites, 
+    isLoading: invitesLoading, 
+    sendInvite, 
+    acceptInvite, 
+    declineInvite 
+  } = useGameInvites();
+  
+  const [createdGameId, setCreatedGameId] = useState<string | null>(null);
+  const [sentInvites, setSentInvites] = useState<string[]>([]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -53,6 +69,38 @@ export default function Games() {
   }
 
   const balance = profile?.review_balance || 0;
+  
+  // My waiting games
+  const myWaitingGames = games.filter(g => 
+    g.status === 'waiting' && g.creator_id === user.id
+  );
+
+  // Handle creating game
+  const handleCreateGame = async (type: GameType) => {
+    const gameId = await createGame(type, balance);
+    if (gameId) {
+      setCreatedGameId(gameId);
+      setSentInvites([]);
+    }
+  };
+
+  // Handle sending invite
+  const handleSendInvite = async (recipientId: string) => {
+    if (!createdGameId) return;
+    
+    const success = await sendInvite(createdGameId, recipientId);
+    if (success) {
+      setSentInvites(prev => [...prev, recipientId]);
+    }
+  };
+
+  // Handle accepting invite
+  const handleAcceptInvite = async (inviteId: string, gameId: string) => {
+    const success = await acceptInvite(inviteId, gameId, balance);
+    if (success) {
+      await fetchCurrentGame(gameId);
+    }
+  };
 
   // If in a game, show game view
   if (currentGame) {
@@ -64,6 +112,85 @@ export default function Games() {
         onLeave={leaveGame}
         onCancel={cancelGame}
       />
+    );
+  }
+
+  // If created a game and waiting for invites
+  if (createdGameId && myWaitingGames.find(g => g.id === createdGameId)) {
+    const game = myWaitingGames.find(g => g.id === createdGameId);
+    
+    return (
+      <div className="container max-w-2xl mx-auto py-8 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setCreatedGameId(null);
+                setSentInvites([]);
+              }}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Назад
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => {
+                cancelGame(createdGameId);
+                setCreatedGameId(null);
+                setSentInvites([]);
+              }}
+            >
+              Отменить игру
+            </Button>
+          </div>
+
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                Пригласите соперника
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  {game?.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
+                  {game?.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
+                  {game?.game_type === 'quiz' && <FileText className="h-5 w-5 text-primary" />}
+                </div>
+                <div>
+                  <p className="font-medium">{GAME_NAMES[game?.game_type || 'tic-tac-toe']}</p>
+                  <p className="text-sm text-muted-foreground">Ставка: {BET_AMOUNT} балл</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Выберите пользователя для приглашения:
+                </p>
+                <UserSelector 
+                  onSelectUser={handleSendInvite}
+                  isLoading={invitesLoading}
+                  sentInvites={sentInvites}
+                />
+              </div>
+
+              {sentInvites.length > 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Ожидание ответа... (отправлено приглашений: {sentInvites.length})
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
     );
   }
 
@@ -103,17 +230,42 @@ export default function Games() {
             <p>• Ставка за игру: <span className="font-bold text-foreground">{BET_AMOUNT} балл</span></p>
             <p>• Победитель получает: <span className="font-bold text-green-500">{WIN_REWARD} балла</span></p>
             <p>• При ничьей баллы возвращаются обоим игрокам</p>
+            <p>• Приглашайте друзей для игры через уведомления</p>
           </CardContent>
         </Card>
 
+        {/* Pending Invites */}
+        {pendingInvites.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Приглашения
+              <Badge variant="secondary">{pendingInvites.length}</Badge>
+            </h2>
+            {pendingInvites.map(invite => (
+              <GameInviteCard
+                key={invite.id}
+                invite={invite}
+                userBalance={balance}
+                onAccept={handleAcceptInvite}
+                onDecline={declineInvite}
+                isLoading={invitesLoading}
+              />
+            ))}
+          </div>
+        )}
+
         <Tabs defaultValue="create" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="create">Создать игру</TabsTrigger>
-            <TabsTrigger value="join">
-              Присоединиться
-              {games.filter(g => g.status === 'waiting' && g.creator_id !== user.id).length > 0 && (
+            <TabsTrigger value="create">
+              <Plus className="h-4 w-4 mr-2" />
+              Создать игру
+            </TabsTrigger>
+            <TabsTrigger value="my-games">
+              Мои игры
+              {myWaitingGames.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {games.filter(g => g.status === 'waiting' && g.creator_id !== user.id).length}
+                  {myWaitingGames.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -129,7 +281,7 @@ export default function Games() {
                 balance={balance}
                 betAmount={BET_AMOUNT}
                 isLoading={isLoading}
-                onCreate={createGame}
+                onCreate={handleCreateGame}
               />
               <GameTypeCard
                 type="rock-paper-scissors"
@@ -139,7 +291,7 @@ export default function Games() {
                 balance={balance}
                 betAmount={BET_AMOUNT}
                 isLoading={isLoading}
-                onCreate={createGame}
+                onCreate={handleCreateGame}
               />
               <GameTypeCard
                 type="quiz"
@@ -149,84 +301,62 @@ export default function Games() {
                 balance={balance}
                 betAmount={BET_AMOUNT}
                 isLoading={isLoading}
-                onCreate={createGame}
+                onCreate={handleCreateGame}
               />
             </div>
           </TabsContent>
 
-          <TabsContent value="join" className="mt-4">
+          <TabsContent value="my-games" className="mt-4">
             <div className="space-y-4">
-              {games.filter(g => g.status === 'waiting' && g.creator_id !== user.id).length === 0 ? (
+              {myWaitingGames.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground">
-                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Нет доступных игр</p>
-                    <p className="text-sm">Создайте свою игру или подождите</p>
+                    <Gamepad2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>У вас нет активных игр</p>
+                    <p className="text-sm">Создайте игру и пригласите друга</p>
                   </CardContent>
                 </Card>
               ) : (
-                games
-                  .filter(g => g.status === 'waiting' && g.creator_id !== user.id)
-                  .map(game => (
-                    <Card key={game.id} className="hover:border-primary/50 transition-colors">
-                      <CardContent className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            {game.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
-                            {game.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
-                            {game.game_type === 'quiz' && <FileText className="h-5 w-5 text-primary" />}
-                          </div>
-                          <div>
-                            <p className="font-medium">{GAME_NAMES[game.game_type]}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Создал: {game.creator?.nickname || 'Игрок'}
-                            </p>
-                          </div>
+                myWaitingGames.map(game => (
+                  <Card key={game.id} className="border-primary/30">
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          {game.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
+                          {game.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
+                          {game.game_type === 'quiz' && <FileText className="h-5 w-5 text-primary" />}
                         </div>
+                        <div>
+                          <p className="font-medium">{GAME_NAMES[game.game_type]}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Ожидание соперника
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
                         <Button 
-                          onClick={() => joinGame(game.id, balance)}
-                          disabled={isLoading || balance < BET_AMOUNT}
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setCreatedGameId(game.id);
+                            setSentInvites([]);
+                          }}
                         >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>Присоединиться ({BET_AMOUNT} балл)</>
-                          )}
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          Пригласить
                         </Button>
-                      </CardContent>
-                    </Card>
-                  ))
-              )}
-
-              {/* My waiting games */}
-              {games.filter(g => g.status === 'waiting' && g.creator_id === user.id).length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-3">Ваши ожидающие игры</h3>
-                  {games
-                    .filter(g => g.status === 'waiting' && g.creator_id === user.id)
-                    .map(game => (
-                      <Card key={game.id} className="border-primary/30">
-                        <CardContent className="flex items-center justify-between p-4">
-                          <div className="flex items-center gap-4">
-                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                            <div>
-                              <p className="font-medium">{GAME_NAMES[game.game_type]}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Ожидание соперника...
-                              </p>
-                            </div>
-                          </div>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => cancelGame(game.id)}
-                          >
-                            Отменить
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => cancelGame(game.id)}
+                        >
+                          Отменить
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </div>
           </TabsContent>
@@ -253,7 +383,7 @@ function GameTypeCard({
   balance: number;
   betAmount: number;
   isLoading: boolean;
-  onCreate: (type: GameType, balance: number) => Promise<string | null>;
+  onCreate: (type: GameType) => Promise<void>;
 }) {
   return (
     <Card className="hover:border-primary/50 transition-colors">
@@ -268,7 +398,7 @@ function GameTypeCard({
           </div>
         </div>
         <Button 
-          onClick={() => onCreate(type, balance)}
+          onClick={() => onCreate(type)}
           disabled={isLoading || balance < betAmount}
         >
           {isLoading ? (
@@ -366,7 +496,7 @@ function GameView({
             <CardContent className="py-12 text-center">
               <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin text-primary" />
               <p className="text-xl font-medium">Ожидание соперника...</p>
-              <p className="text-muted-foreground">Отправьте ссылку другу</p>
+              <p className="text-muted-foreground">Пригласите друга через раздел приглашений</p>
             </CardContent>
           </Card>
         )}
