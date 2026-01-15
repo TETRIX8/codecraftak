@@ -78,3 +78,19 @@ export function useUserSolutionsPublic(userId: string) {
     enabled: !!userId,
   });
 }
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url, trust_rating, reviews_completed, level, likes_received, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data as UserProfile[];
+    },
+  });
+}
