@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AdminNotifications } from '@/components/admin/AdminNotifications';
 import { AdminTopics } from '@/components/admin/AdminTopics';
+import { AdminUserRatings } from '@/components/admin/AdminUserRatings';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -174,6 +175,11 @@ export default function Admin() {
         {/* Topics Section */}
         <div className="mb-8">
           <AdminTopics />
+        </div>
+
+        {/* User Ratings Section */}
+        <div className="mb-8">
+          <AdminUserRatings />
         </div>
 
         <motion.div
