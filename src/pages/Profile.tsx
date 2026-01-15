@@ -148,6 +148,9 @@ export default function Profile() {
               icon: Star,
               label: 'Рейтинг доверия',
               value: `${profile.trust_rating}%`,
+              subtext: profile.total_reviews > 0 
+                ? `${profile.correct_reviews}/${profile.total_reviews} верных`
+                : 'Нет проверок',
               color: 'text-warning',
               bgColor: 'bg-warning/10',
             },
@@ -155,6 +158,9 @@ export default function Profile() {
               icon: CheckCircle,
               label: 'Проверок выполнено',
               value: profile.reviews_completed,
+              subtext: profile.total_reviews > 0
+                ? `${Math.round((profile.correct_reviews / profile.total_reviews) * 100)}% точность`
+                : undefined,
               color: 'text-success',
               bgColor: 'bg-success/10',
             },
@@ -162,6 +168,7 @@ export default function Profile() {
               icon: Code2,
               label: 'Баланс проверок',
               value: profile.review_balance,
+              subtext: undefined,
               color: 'text-primary',
               bgColor: 'bg-primary/10',
             },
@@ -169,6 +176,7 @@ export default function Profile() {
               icon: TrendingUp,
               label: 'Решений отправлено',
               value: solutions?.length || 0,
+              subtext: undefined,
               color: 'text-accent',
               bgColor: 'bg-accent/10',
             },
@@ -185,6 +193,9 @@ export default function Profile() {
               </div>
               <div className="text-2xl font-bold mb-1">{stat.value}</div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
+              {stat.subtext && (
+                <div className="text-xs text-muted-foreground/70 mt-1">{stat.subtext}</div>
+              )}
             </motion.div>
           ))}
         </div>

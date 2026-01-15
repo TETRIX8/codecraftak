@@ -195,14 +195,21 @@ export default function Leaderboard() {
                   </div>
                   
                   <div className="col-span-2 text-center">
-                    <span className={cn(
-                      "font-medium",
-                      entry.trust_rating >= 95 && "text-success",
-                      entry.trust_rating >= 90 && entry.trust_rating < 95 && "text-warning",
-                      entry.trust_rating < 90 && "text-muted-foreground",
-                    )}>
-                      {entry.trust_rating}%
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className={cn(
+                        "font-medium",
+                        entry.trust_rating >= 95 && "text-success",
+                        entry.trust_rating >= 90 && entry.trust_rating < 95 && "text-warning",
+                        entry.trust_rating < 90 && "text-muted-foreground",
+                      )}>
+                        {entry.trust_rating}%
+                      </span>
+                      {entry.total_reviews > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {entry.correct_reviews}/{entry.total_reviews}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="col-span-2 text-center">
