@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface Profile {
   id: string;
   nickname: string;
-  avatar_url: string;
+  avatar_url: string | null;
   trust_rating: number;
   review_balance: number;
   reviews_completed: number;
@@ -13,6 +13,9 @@ export interface Profile {
   streak: number;
   last_activity_date: string | null;
   created_at: string;
+  likes_received: number;
+  correct_reviews: number;
+  total_reviews: number;
 }
 
 export function useProfile(userId?: string) {
