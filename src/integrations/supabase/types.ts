@@ -401,6 +401,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          correct_reviews: number | null
           created_at: string | null
           daily_reviews_count: number | null
           id: string
@@ -412,11 +413,13 @@ export type Database = {
           review_balance: number | null
           reviews_completed: number | null
           streak: number | null
+          total_reviews: number | null
           trust_rating: number | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          correct_reviews?: number | null
           created_at?: string | null
           daily_reviews_count?: number | null
           id: string
@@ -428,11 +431,13 @@ export type Database = {
           review_balance?: number | null
           reviews_completed?: number | null
           streak?: number | null
+          total_reviews?: number | null
           trust_rating?: number | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          correct_reviews?: number | null
           created_at?: string | null
           daily_reviews_count?: number | null
           id?: string
@@ -444,6 +449,7 @@ export type Database = {
           review_balance?: number | null
           reviews_completed?: number | null
           streak?: number | null
+          total_reviews?: number | null
           trust_rating?: number | null
           updated_at?: string | null
         }
@@ -690,6 +696,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_trust_rating: {
+        Args: {
+          _correct_reviews: number
+          _likes_received: number
+          _total_reviews: number
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
