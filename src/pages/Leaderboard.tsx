@@ -1,14 +1,25 @@
-import { motion } from 'framer-motion';
-import { Trophy, Medal, Award, Flame, TrendingUp, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Medal, Award, Flame, TrendingUp, Loader2, Crown, Sparkles } from 'lucide-react';
 import { LevelBadge } from '@/components/common/Badges';
 import { useLeaderboard, useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
 
 export default function Leaderboard() {
   const { user } = useAuth();
   const { data: leaderboard, isLoading } = useLeaderboard();
   const { data: currentProfile } = useProfile();
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading && leaderboard && leaderboard.length > 0) {
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, leaderboard]);
 
   if (isLoading) {
     return (
@@ -19,14 +30,115 @@ export default function Leaderboard() {
   }
 
   const topThree = leaderboard?.slice(0, 3) || [];
-  const restOfLeaderboard = leaderboard?.slice(3) || [];
+  const leader = topThree[0];
 
   // Find current user's rank
   const currentUserRank = leaderboard?.findIndex(p => p.id === user?.id);
   const isInTop = currentUserRank !== undefined && currentUserRank !== -1;
 
+  // Calculate accuracy percentage
+  const getAccuracy = (correct: number, total: number) => {
+    if (total === 0) return 0;
+    return Math.round((correct / total) * 100);
+  };
+
   return (
-    <div className="min-h-screen bg-background py-24">
+    <div className="min-h-screen bg-background py-24 overflow-hidden">
+      {/* Epic Intro Animation */}
+      <AnimatePresence>
+        {showIntro && leader && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-50 bg-background flex items-center justify-center"
+            onClick={() => setShowIntro(false)}
+          >
+            <div className="relative">
+              {/* Glow effect */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1.5, 1.2], opacity: [0, 0.8, 0.6] }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 via-warning/40 to-yellow-400/30 blur-3xl rounded-full"
+                style={{ width: '400px', height: '400px', left: '-150px', top: '-150px' }}
+              />
+              
+              {/* Crown */}
+              <motion.div
+                initial={{ y: -100, opacity: 0, rotate: -20 }}
+                animate={{ y: 0, opacity: 1, rotate: 0 }}
+                transition={{ delay: 0.3, duration: 0.8, type: "spring" }}
+                className="absolute -top-16 left-1/2 -translate-x-1/2"
+              >
+                <Crown className="w-16 h-16 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
+              </motion.div>
+
+              {/* Avatar */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.2, duration: 0.8, type: "spring" }}
+                className="relative"
+              >
+                <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.4)]">
+                  <img
+                    src={leader.avatar_url}
+                    alt={leader.nickname}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Sparkles */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0"
+                >
+                  <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400" />
+                  <Sparkles className="absolute -bottom-2 -left-2 w-6 h-6 text-yellow-400" />
+                </motion.div>
+              </motion.div>
+
+              {/* Name */}
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+                className="text-center mt-6"
+              >
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="text-warning text-sm font-medium mb-2"
+                >
+                  🏆 ЛИДЕР РЕЙТИНГА 🏆
+                </motion.p>
+                <h2 className="text-3xl font-bold gradient-text">{leader.nickname}</h2>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 1, type: "spring" }}
+                  className="mt-4 text-4xl font-black text-yellow-400"
+                >
+                  {leader.reviews_completed * 10} очков
+                </motion.div>
+              </motion.div>
+
+              {/* Click to skip */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+                className="absolute -bottom-20 left-1/2 -translate-x-1/2 text-muted-foreground text-sm"
+              >
+                Нажмите, чтобы продолжить
+              </motion.p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -196,24 +308,35 @@ export default function Leaderboard() {
                   
                   <div className="col-span-2 text-center">
                     <div className="flex flex-col items-center">
-                      <span className={cn(
-                        "font-medium",
-                        entry.trust_rating >= 95 && "text-success",
-                        entry.trust_rating >= 90 && entry.trust_rating < 95 && "text-warning",
-                        entry.trust_rating < 90 && "text-muted-foreground",
-                      )}>
-                        {entry.trust_rating}%
-                      </span>
-                      {entry.total_reviews > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {entry.correct_reviews}/{entry.total_reviews}
-                        </span>
+                      {entry.total_reviews > 0 ? (
+                        <>
+                          <span className={cn(
+                            "font-medium",
+                            getAccuracy(entry.correct_reviews, entry.total_reviews) >= 80 && "text-success",
+                            getAccuracy(entry.correct_reviews, entry.total_reviews) >= 60 && getAccuracy(entry.correct_reviews, entry.total_reviews) < 80 && "text-warning",
+                            getAccuracy(entry.correct_reviews, entry.total_reviews) < 60 && "text-destructive",
+                          )}>
+                            {getAccuracy(entry.correct_reviews, entry.total_reviews)}%
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {entry.correct_reviews}/{entry.total_reviews}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </div>
                   </div>
                   
                   <div className="col-span-2 text-center">
-                    <span className="font-bold gradient-text">{entry.reviews_completed * 10}</span>
+                    <span className={cn(
+                      "font-bold",
+                      entry.trust_rating >= 80 && "text-success",
+                      entry.trust_rating >= 50 && entry.trust_rating < 80 && "gradient-text",
+                      entry.trust_rating < 50 && "text-muted-foreground",
+                    )}>
+                      {entry.trust_rating}
+                    </span>
                   </div>
                 </motion.div>
               );
