@@ -1,47 +1,65 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Minus, Loader2, Star } from 'lucide-react';
+import { Search, Plus, Minus, Loader2, Star, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUsers } from '@/hooks/useUsers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface UserStats {
+  id: string;
+  nickname: string;
+  avatar_url: string | null;
+  trust_rating: number;
+  correct_reviews: number;
+  total_reviews: number;
+  reviews_completed: number;
+  review_balance: number;
+}
 
 export function AdminUserRatings() {
   const { data: users, isLoading } = useUsers();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<{
-    id: string;
-    nickname: string;
-    avatar_url: string | null;
-    trust_rating: number;
-  } | null>(null);
-  const [ratingChange, setRatingChange] = useState('');
+  const [selectedUser, setSelectedUser] = useState<UserStats | null>(null);
+  const [activeTab, setActiveTab] = useState('trust_rating');
+  const [inputValue, setInputValue] = useState('');
 
-  const updateRating = useMutation({
-    mutationFn: async ({ userId, newRating }: { userId: string; newRating: number }) => {
-      const clampedRating = Math.max(0, Math.min(100, newRating));
+  const updateProfile = useMutation({
+    mutationFn: async ({ userId, field, value }: { userId: string; field: string; value: number }) => {
+      const clampedValue = field === 'trust_rating' 
+        ? Math.max(0, Math.min(100, value))
+        : Math.max(0, value);
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ trust_rating: clampedRating })
+        .update({ [field]: clampedValue })
         .eq('id', userId);
       if (error) throw error;
-      return clampedRating;
+      return { field, value: clampedValue };
     },
-    onSuccess: (newRating) => {
+    onSuccess: ({ field, value }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
-      toast.success(`Рейтинг обновлён: ${newRating}%`);
+      const fieldNames: Record<string, string> = {
+        trust_rating: 'Очки',
+        correct_reviews: 'Правильных проверок',
+        total_reviews: 'Всего проверок',
+        reviews_completed: 'Выполнено проверок',
+        review_balance: 'Баланс проверок',
+      };
+      toast.success(`${fieldNames[field] || field} обновлено: ${value}`);
       setSelectedUser(null);
-      setRatingChange('');
+      setInputValue('');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Ошибка при обновлении рейтинга');
+      toast.error(error.message || 'Ошибка при обновлении');
     },
   });
 
@@ -50,26 +68,41 @@ export function AdminUserRatings() {
   );
 
   const handleApplyChange = (isAdd: boolean) => {
-    if (!selectedUser || !ratingChange) return;
-    const change = parseInt(ratingChange) || 0;
-    const newRating = isAdd 
-      ? selectedUser.trust_rating + change 
-      : selectedUser.trust_rating - change;
-    updateRating.mutate({ userId: selectedUser.id, newRating });
+    if (!selectedUser || !inputValue) return;
+    const change = parseInt(inputValue) || 0;
+    const currentValue = (selectedUser as any)[activeTab] || 0;
+    const newValue = isAdd ? currentValue + change : currentValue - change;
+    updateProfile.mutate({ userId: selectedUser.id, field: activeTab, value: newValue });
   };
 
-  const handleSetRating = () => {
-    if (!selectedUser || !ratingChange) return;
-    const newRating = parseInt(ratingChange) || 0;
-    updateRating.mutate({ userId: selectedUser.id, newRating });
+  const handleSetValue = () => {
+    if (!selectedUser || !inputValue) return;
+    const newValue = parseInt(inputValue) || 0;
+    updateProfile.mutate({ userId: selectedUser.id, field: activeTab, value: newValue });
+  };
+
+  const getFieldLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      trust_rating: 'Очки',
+      correct_reviews: 'Правильных проверок',
+      total_reviews: 'Всего проверок',
+      reviews_completed: 'Выполнено проверок',
+      review_balance: 'Баланс проверок',
+    };
+    return labels[field] || field;
+  };
+
+  const getCurrentValue = () => {
+    if (!selectedUser) return 0;
+    return (selectedUser as any)[activeTab] || 0;
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Star className="w-5 h-5 text-warning" />
-          Управление рейтингом пользователей
+          <Settings2 className="w-5 h-5 text-primary" />
+          Управление статистикой пользователей
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -97,7 +130,11 @@ export function AdminUserRatings() {
                   id: user.id,
                   nickname: user.nickname,
                   avatar_url: user.avatar_url,
-                  trust_rating: user.trust_rating,
+                  trust_rating: user.trust_rating ?? 50,
+                  correct_reviews: (user as any).correct_reviews ?? 0,
+                  total_reviews: (user as any).total_reviews ?? 0,
+                  reviews_completed: user.reviews_completed ?? 0,
+                  review_balance: (user as any).review_balance ?? 0,
                 })}
               >
                 <div className="flex items-center gap-3">
@@ -105,11 +142,15 @@ export function AdminUserRatings() {
                     <AvatarImage src={user.avatar_url || undefined} />
                     <AvatarFallback>{user.nickname[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{user.nickname}</span>
+                  <div>
+                    <span className="font-medium">{user.nickname}</span>
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      <span>Очки: {user.trust_rating}%</span>
+                      <span>Проверок: {user.reviews_completed}</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-warning">
-                  {user.trust_rating}%
-                </span>
+                <Star className="w-4 h-4 text-warning" />
               </div>
             ))}
             {filteredUsers?.length === 0 && (
@@ -121,9 +162,9 @@ export function AdminUserRatings() {
         )}
 
         <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Изменить рейтинг</DialogTitle>
+              <DialogTitle>Изменить статистику</DialogTitle>
             </DialogHeader>
             {selectedUser && (
               <div className="space-y-4">
@@ -134,10 +175,26 @@ export function AdminUserRatings() {
                   </Avatar>
                   <div>
                     <p className="font-medium">{selectedUser.nickname}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Текущий рейтинг: <span className="text-warning font-medium">{selectedUser.trust_rating}%</span>
-                    </p>
                   </div>
+                </div>
+
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="grid grid-cols-2 mb-4">
+                    <TabsTrigger value="trust_rating">Очки</TabsTrigger>
+                    <TabsTrigger value="review_balance">Баланс</TabsTrigger>
+                  </TabsList>
+                  <TabsList className="grid grid-cols-3">
+                    <TabsTrigger value="correct_reviews">Правильные</TabsTrigger>
+                    <TabsTrigger value="total_reviews">Всего</TabsTrigger>
+                    <TabsTrigger value="reviews_completed">Выполнено</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-sm text-muted-foreground mb-1">{getFieldLabel(activeTab)}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {getCurrentValue()}{activeTab === 'trust_rating' ? '%' : ''}
+                  </p>
                 </div>
 
                 <div>
@@ -145,9 +202,9 @@ export function AdminUserRatings() {
                   <Input
                     type="number"
                     min="0"
-                    max="100"
-                    value={ratingChange}
-                    onChange={(e) => setRatingChange(e.target.value)}
+                    max={activeTab === 'trust_rating' ? 100 : undefined}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Введите число"
                   />
                 </div>
@@ -156,7 +213,7 @@ export function AdminUserRatings() {
                   <Button
                     variant="outline"
                     onClick={() => handleApplyChange(true)}
-                    disabled={!ratingChange || updateRating.isPending}
+                    disabled={!inputValue || updateProfile.isPending}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Добавить
@@ -164,23 +221,25 @@ export function AdminUserRatings() {
                   <Button
                     variant="outline"
                     onClick={() => handleApplyChange(false)}
-                    disabled={!ratingChange || updateRating.isPending}
+                    disabled={!inputValue || updateProfile.isPending}
                   >
                     <Minus className="w-4 h-4 mr-1" />
                     Вычесть
                   </Button>
                   <Button
                     variant="gradient"
-                    onClick={handleSetRating}
-                    disabled={!ratingChange || updateRating.isPending}
+                    onClick={handleSetValue}
+                    disabled={!inputValue || updateProfile.isPending}
                   >
-                    {updateRating.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                    {updateProfile.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
                     Установить
                   </Button>
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  Рейтинг будет ограничен диапазоном 0-100%
+                  {activeTab === 'trust_rating' 
+                    ? 'Очки ограничены диапазоном 0-100%'
+                    : 'Значение не может быть отрицательным'}
                 </p>
               </div>
             )}
