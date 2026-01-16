@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { AdminNotifications } from '@/components/admin/AdminNotifications';
 import { AdminTopics } from '@/components/admin/AdminTopics';
 import { AdminUserRatings } from '@/components/admin/AdminUserRatings';
+import { AdminSolutions } from '@/components/admin/AdminSolutions';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -180,6 +181,11 @@ export default function Admin() {
         {/* User Ratings Section */}
         <div className="mb-8">
           <AdminUserRatings />
+        </div>
+
+        {/* Solutions Management Section */}
+        <div className="mb-8">
+          <AdminSolutions />
         </div>
 
         <motion.div
