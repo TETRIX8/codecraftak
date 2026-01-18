@@ -330,12 +330,11 @@ export default function Leaderboard() {
                   
                   <div className="col-span-2 text-center">
                     <span className={cn(
-                      "font-bold",
-                      entry.trust_rating >= 80 && "text-success",
-                      entry.trust_rating >= 50 && entry.trust_rating < 80 && "gradient-text",
-                      entry.trust_rating < 50 && "text-muted-foreground",
+                      "font-bold text-lg",
+                      rank <= 3 && "gradient-text",
+                      rank > 3 && "text-foreground",
                     )}>
-                      {entry.trust_rating}
+                      {entry.reviews_completed * 10}
                     </span>
                   </div>
                 </motion.div>
