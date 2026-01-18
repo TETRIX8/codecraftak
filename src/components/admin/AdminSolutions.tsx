@@ -64,7 +64,16 @@ export function AdminSolutions() {
   });
 
   const updateSolutionStatus = useMutation({
-    mutationFn: async ({ solutionId, newStatus }: { solutionId: string; newStatus: 'accepted' | 'rejected' | 'pending' }) => {
+    mutationFn: async ({ solutionId, newStatus, oldStatus }: { solutionId: string; newStatus: 'accepted' | 'rejected' | 'pending'; oldStatus: string }) => {
+      const solution = solutions?.find(s => s.id === solutionId);
+      
+      // Get all reviews for this solution
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('reviewer_id, verdict')
+        .eq('solution_id', solutionId);
+
+      // Update solution status
       const { error } = await supabase
         .from('solutions')
         .update({ 
@@ -74,9 +83,9 @@ export function AdminSolutions() {
         .eq('id', solutionId);
       if (error) throw error;
 
-      // If accepting a previously rejected solution, give +5 balance to author
-      if (newStatus === 'accepted') {
-        const solution = solutions?.find(s => s.id === solutionId);
+      // Handle point changes based on admin action
+      if (newStatus === 'accepted' && oldStatus !== 'accepted') {
+        // Give +5 balance to solution author
         if (solution?.user?.id) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -93,6 +102,68 @@ export function AdminSolutions() {
               .eq('id', solution.user.id);
           }
         }
+
+        // Deduct 1 point from reviewers who rejected incorrectly
+        if (reviews) {
+          for (const review of reviews) {
+            if (review.verdict === 'rejected') {
+              const { data: reviewerProfile } = await supabase
+                .from('profiles')
+                .select('review_balance')
+                .eq('id', review.reviewer_id)
+                .single();
+              
+              if (reviewerProfile) {
+                await supabase
+                  .from('profiles')
+                  .update({ 
+                    review_balance: Math.max((reviewerProfile.review_balance || 0) - 1, 0)
+                  })
+                  .eq('id', review.reviewer_id);
+              }
+            }
+          }
+        }
+      } else if (newStatus === 'rejected') {
+        // If was accepted before, remove the +5 from author
+        if (oldStatus === 'accepted' && solution?.user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('review_balance')
+            .eq('id', solution.user.id)
+            .single();
+
+          if (profile) {
+            await supabase
+              .from('profiles')
+              .update({ 
+                review_balance: Math.max((profile.review_balance || 0) - 5, 0)
+              })
+              .eq('id', solution.user.id);
+          }
+        }
+
+        // Deduct 1 point from reviewers who accepted incorrectly
+        if (reviews) {
+          for (const review of reviews) {
+            if (review.verdict === 'accepted') {
+              const { data: reviewerProfile } = await supabase
+                .from('profiles')
+                .select('review_balance')
+                .eq('id', review.reviewer_id)
+                .single();
+              
+              if (reviewerProfile) {
+                await supabase
+                  .from('profiles')
+                  .update({ 
+                    review_balance: Math.max((reviewerProfile.review_balance || 0) - 1, 0)
+                  })
+                  .eq('id', review.reviewer_id);
+              }
+            }
+          }
+        }
       }
 
       return newStatus;
@@ -102,6 +173,8 @@ export function AdminSolutions() {
       queryClient.invalidateQueries({ queryKey: ['solutions'] });
       queryClient.invalidateQueries({ queryKey: ['user-solutions'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       
       const statusText = newStatus === 'accepted' ? 'принято' : newStatus === 'rejected' ? 'отклонено' : 'на проверке';
       toast.success(`Решение ${statusText}`);
@@ -255,7 +328,8 @@ export function AdminSolutions() {
                     variant="outline"
                     onClick={() => updateSolutionStatus.mutate({ 
                       solutionId: selectedSolution.id, 
-                      newStatus: 'pending' 
+                      newStatus: 'pending',
+                      oldStatus: selectedSolution.status
                     })}
                     disabled={updateSolutionStatus.isPending || selectedSolution.status === 'pending'}
                   >
@@ -266,7 +340,8 @@ export function AdminSolutions() {
                     className="text-destructive hover:text-destructive"
                     onClick={() => updateSolutionStatus.mutate({ 
                       solutionId: selectedSolution.id, 
-                      newStatus: 'rejected' 
+                      newStatus: 'rejected',
+                      oldStatus: selectedSolution.status
                     })}
                     disabled={updateSolutionStatus.isPending || selectedSolution.status === 'rejected'}
                   >
@@ -277,7 +352,8 @@ export function AdminSolutions() {
                     variant="gradient"
                     onClick={() => updateSolutionStatus.mutate({ 
                       solutionId: selectedSolution.id, 
-                      newStatus: 'accepted' 
+                      newStatus: 'accepted',
+                      oldStatus: selectedSolution.status
                     })}
                     disabled={updateSolutionStatus.isPending || selectedSolution.status === 'accepted'}
                   >
