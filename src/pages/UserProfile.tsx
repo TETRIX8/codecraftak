@@ -8,7 +8,8 @@ import {
   Award,
   ArrowLeft,
   Loader2,
-  Code2
+  Code2,
+  Crown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LevelBadge, DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
@@ -16,6 +17,7 @@ import { useUserProfile, useUserSolutionsPublic } from '@/hooks/useUsers';
 import { useProfileLikes, useToggleLike } from '@/hooks/useLikes';
 import { useCreatePrivateChat } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserBadges } from '@/hooks/useBadges';
 import { toast } from 'sonner';
 
 export default function UserProfile() {
@@ -25,6 +27,7 @@ export default function UserProfile() {
   const { data: profile, isLoading } = useUserProfile(id!);
   const { data: solutions } = useUserSolutionsPublic(id!);
   const { data: likesData } = useProfileLikes(id);
+  const { data: userBadges } = useUserBadges(id);
   const toggleLike = useToggleLike();
   const createChat = useCreatePrivateChat();
 
@@ -103,7 +106,7 @@ export default function UserProfile() {
           
           <div className="relative pt-24 px-8 pb-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              {/* Avatar */}
+              {/* Avatar with Leader Badge */}
               <div className="relative">
                 <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-background shadow-xl">
                   <img
@@ -112,6 +115,12 @@ export default function UserProfile() {
                     className="w-full h-full object-cover"
                   />
                 </div>
+                {/* Leader Badge - показывается если есть бейдж "Легенда рейтинга" */}
+                {userBadges?.some(b => b.badges.requirement_type === 'leader_days') && (
+                  <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/30 animate-pulse">
+                    <Crown className="w-5 h-5 text-yellow-900" />
+                  </div>
+                )}
               </div>
 
               {/* Info */}

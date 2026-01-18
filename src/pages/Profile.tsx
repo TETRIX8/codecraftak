@@ -10,7 +10,9 @@ import {
   Shield,
   User as UserIcon,
   Loader2,
-  LogIn
+  LogIn,
+  Crown,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,13 +21,15 @@ import { SolutionCard } from '@/components/solutions/SolutionCard';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { useUserBadges } from '@/hooks/useBadges';
+import { useUserBadges, useBadges } from '@/hooks/useBadges';
 import { useUserSolutions } from '@/hooks/useSolutions';
+import { cn } from '@/lib/utils';
 
 export default function Profile() {
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: userBadges } = useUserBadges();
+  const { data: allBadges } = useBadges();
   const { data: solutions } = useUserSolutions();
 
   if (!user) {
@@ -97,7 +101,7 @@ export default function Profile() {
           
           <div className="relative pt-24 px-8 pb-8">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              {/* Avatar */}
+              {/* Avatar with Leader Badge */}
               <div className="relative">
                 <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-background shadow-xl">
                   <img
@@ -109,6 +113,12 @@ export default function Profile() {
                 <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                   <Flame className="w-5 h-5 text-primary-foreground" />
                 </div>
+                {/* Leader Badge - показывается если есть бейдж "Легенда рейтинга" */}
+                {userBadges?.some(b => b.badges.requirement_type === 'leader_days') && (
+                  <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/30 animate-pulse">
+                    <Crown className="w-5 h-5 text-yellow-900" />
+                  </div>
+                )}
               </div>
 
               {/* Info */}
@@ -263,7 +273,7 @@ export default function Profile() {
             </div>
           </motion.div>
 
-          {/* Badges */}
+          {/* All Achievements */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -271,44 +281,108 @@ export default function Profile() {
             className="p-6 rounded-xl bg-card border border-border"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Достижения</h2>
+              <h2 className="text-xl font-semibold">Все достижения</h2>
               <span className="text-sm text-muted-foreground">
-                {userBadges?.length || 0} из 8
+                {userBadges?.length || 0} из {allBadges?.length || 0}
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              {userBadges?.map((userBadge, index) => (
-                <motion.div
-                  key={userBadge.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  className="p-4 rounded-xl bg-muted/50 text-center group hover:bg-primary/10 transition-colors cursor-pointer"
-                >
-                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
-                    {userBadge.badges.icon}
-                  </div>
-                  <div className="text-sm font-medium mb-1">{userBadge.badges.name}</div>
-                  <div className="text-xs text-muted-foreground line-clamp-2">
-                    {userBadge.badges.description}
-                  </div>
-                </motion.div>
-              ))}
-              
-              {/* Locked badges */}
-              {Array.from({ length: Math.max(0, 6 - (userBadges?.length || 0)) }).map((_, index) => (
-                <div
-                  key={`locked-${index}`}
-                  className="p-4 rounded-xl bg-muted/30 text-center opacity-50"
-                >
-                  <div className="text-3xl mb-2">🔒</div>
-                  <div className="text-sm font-medium mb-1">Заблокировано</div>
-                  <div className="text-xs text-muted-foreground">
-                    Продолжайте активность
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
+              {allBadges?.map((badge) => {
+                const isEarned = userBadges?.some(ub => ub.badge_id === badge.id);
+                const earnedBadge = userBadges?.find(ub => ub.badge_id === badge.id);
+                
+                // Генерируем читаемое условие
+                const getRequirementText = () => {
+                  switch (badge.requirement_type) {
+                    case 'reviews': return `Проверить ${badge.requirement_value} заданий`;
+                    case 'solutions': return `Решить ${badge.requirement_value} задач`;
+                    case 'streak': return `Серия ${badge.requirement_value} дней подряд`;
+                    case 'trust_rating': return `Рейтинг доверия ${badge.requirement_value}%`;
+                    case 'likes_received': return `Получить ${badge.requirement_value} лайков`;
+                    case 'weekly_reviews': return `${badge.requirement_value} проверок за неделю`;
+                    case 'registration': return 'Зарегистрироваться';
+                    case 'leader_days': return `Быть лидером ${badge.requirement_value} дней`;
+                    case 'python_reviews': return `Проверить ${badge.requirement_value} Python заданий`;
+                    case 'ts_reviews': return `Проверить ${badge.requirement_value} TypeScript заданий`;
+                    case 'js_reviews': return `Проверить ${badge.requirement_value} JavaScript заданий`;
+                    case 'java_reviews': return `Проверить ${badge.requirement_value} Java заданий`;
+                    case 'cpp_reviews': return `Проверить ${badge.requirement_value} C++ заданий`;
+                    case 'html_reviews': return `Проверить ${badge.requirement_value} HTML/CSS заданий`;
+                    default: return badge.description;
+                  }
+                };
+
+                // Бонус очков за бейдж
+                const getBonusPoints = () => {
+                  if (badge.requirement_type === 'leader_days') return 500;
+                  if (badge.requirement_type === 'trust_rating' && badge.requirement_value >= 95) return 200;
+                  if (badge.requirement_type === 'trust_rating' && badge.requirement_value >= 90) return 150;
+                  if (badge.requirement_type === 'trust_rating' && badge.requirement_value >= 80) return 100;
+                  if (badge.requirement_value >= 100) return 100;
+                  if (badge.requirement_value >= 50) return 50;
+                  if (badge.requirement_value >= 25) return 25;
+                  if (badge.requirement_value >= 10) return 15;
+                  return 10;
+                };
+
+                return (
+                  <motion.div
+                    key={badge.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={cn(
+                      "p-4 rounded-xl border transition-all",
+                      isEarned 
+                        ? "bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30" 
+                        : "bg-muted/30 border-border opacity-60 hover:opacity-80"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "text-3xl flex-shrink-0",
+                        !isEarned && "grayscale"
+                      )}>
+                        {isEarned ? badge.icon : <Lock className="w-7 h-7 text-muted-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "font-semibold text-sm truncate",
+                            isEarned ? "text-foreground" : "text-muted-foreground"
+                          )}>
+                            {badge.name}
+                          </span>
+                          {isEarned && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-success/20 text-success flex-shrink-0">
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                          {badge.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-primary/80 font-medium">
+                            {getRequirementText()}
+                          </span>
+                          <span className={cn(
+                            "text-xs font-bold",
+                            isEarned ? "text-warning" : "text-muted-foreground"
+                          )}>
+                            +{getBonusPoints()} 🏆
+                          </span>
+                        </div>
+                        {isEarned && earnedBadge && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Получено {new Date(earnedBadge.earned_at).toLocaleDateString('ru-RU')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         </div>
