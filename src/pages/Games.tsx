@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useGames, GameType, Game } from '@/hooks/useGames';
@@ -55,6 +55,14 @@ export default function Games() {
   
   const [createdGameId, setCreatedGameId] = useState<string | null>(null);
   const [sentInvites, setSentInvites] = useState<string[]>([]);
+  
+  // When currentGame becomes active (status === 'playing'), reset createdGameId
+  useEffect(() => {
+    if (currentGame && currentGame.status === 'playing') {
+      setCreatedGameId(null);
+      setSentInvites([]);
+    }
+  }, [currentGame]);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -96,9 +104,10 @@ export default function Games() {
 
   // Handle accepting invite
   const handleAcceptInvite = async (inviteId: string, gameId: string) => {
-    const success = await acceptInvite(inviteId, gameId, balance);
-    if (success) {
-      await fetchCurrentGame(gameId);
+    const acceptedGameId = await acceptInvite(inviteId, gameId, balance);
+    if (acceptedGameId) {
+      // Fetch the game to display it
+      await fetchCurrentGame(acceptedGameId);
     }
   };
 

@@ -175,21 +175,43 @@ export function useGameInvites() {
     }
   }
 
-  // Accept invite
-  async function acceptInvite(inviteId: string, gameId: string, currentBalance: number): Promise<boolean> {
+  // Accept invite - returns the gameId on success for navigation
+  async function acceptInvite(inviteId: string, gameId: string, currentBalance: number): Promise<string | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
-      return false;
+      return null;
     }
 
     if (currentBalance < 1) {
       toast.error('Недостаточно баллов для игры');
-      return false;
+      return null;
     }
 
     setIsLoading(true);
 
     try {
+      // First check if game is still available
+      const { data: game, error: fetchError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('id', gameId)
+        .single();
+
+      if (fetchError || !game) {
+        toast.error('Игра не найдена или уже началась');
+        return null;
+      }
+
+      if (game.status !== 'waiting') {
+        toast.error('Игра уже началась с другим игроком');
+        return null;
+      }
+
+      if (game.opponent_id) {
+        toast.error('В этой игре уже есть соперник');
+        return null;
+      }
+
       // Update invite status
       const { error: inviteError } = await supabase
         .from('game_invites')
@@ -205,15 +227,6 @@ export function useGameInvites() {
         .eq('id', user.id);
 
       if (updateError) throw updateError;
-
-      // Get game and join
-      const { data: game, error: fetchError } = await supabase
-        .from('games')
-        .select('*')
-        .eq('id', gameId)
-        .single();
-
-      if (fetchError || !game) throw fetchError || new Error('Game not found');
 
       // Update game state with opponent
       const gameState = (game.game_state as Record<string, Json>) || {};
@@ -254,11 +267,11 @@ export function useGameInvites() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Вы присоединились к игре!');
       
-      return true;
+      return gameId;
     } catch (error) {
       console.error('Error accepting invite:', error);
       toast.error('Ошибка при принятии приглашения');
-      return false;
+      return null;
     } finally {
       setIsLoading(false);
       fetchPendingInvites();
