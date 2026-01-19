@@ -30,7 +30,7 @@ import { Navigate } from 'react-router-dom';
 
 export default function Games() {
   const { user } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useProfile();
   const { 
     games, 
     currentGame, 
@@ -40,6 +40,7 @@ export default function Games() {
     cancelGame,
     leaveGame,
     fetchCurrentGame,
+    setGame,
     GAME_NAMES, 
     BET_AMOUNT, 
     WIN_REWARD 
@@ -104,10 +105,15 @@ export default function Games() {
 
   // Handle accepting invite
   const handleAcceptInvite = async (inviteId: string, gameId: string) => {
-    const acceptedGameId = await acceptInvite(inviteId, gameId, balance);
-    if (acceptedGameId) {
-      // Fetch the game to display it
-      await fetchCurrentGame(acceptedGameId);
+    console.log('handleAcceptInvite called:', inviteId, gameId);
+    const result = await acceptInvite(inviteId, gameId, balance);
+    console.log('acceptInvite result:', result);
+    
+    if (result.success && result.game) {
+      // Immediately load the game view by fetching the full game data
+      console.log('Fetching full game data...');
+      await fetchCurrentGame(result.game.id);
+      refetchProfile();
     }
   };
 

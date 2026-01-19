@@ -175,16 +175,31 @@ export function useGameInvites() {
     }
   }
 
-  // Accept invite - returns the gameId on success for navigation
-  async function acceptInvite(inviteId: string, gameId: string, currentBalance: number): Promise<string | null> {
+  // Accept invite - returns the full game object on success
+  async function acceptInvite(inviteId: string, gameId: string, currentBalance: number): Promise<{
+    success: boolean;
+    game?: {
+      id: string;
+      game_type: string;
+      status: string;
+      creator_id: string;
+      opponent_id: string | null;
+      winner_id: string | null;
+      game_state: Record<string, unknown>;
+      current_turn: string | null;
+      bet_amount: number;
+      created_at: string;
+      updated_at: string;
+    };
+  }> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
-      return null;
+      return { success: false };
     }
 
     if (currentBalance < 1) {
       toast.error('Недостаточно баллов для игры');
-      return null;
+      return { success: false };
     }
 
     setIsLoading(true);
@@ -199,17 +214,17 @@ export function useGameInvites() {
 
       if (fetchError || !game) {
         toast.error('Игра не найдена или уже началась');
-        return null;
+        return { success: false };
       }
 
       if (game.status !== 'waiting') {
         toast.error('Игра уже началась с другим игроком');
-        return null;
+        return { success: false };
       }
 
       if (game.opponent_id) {
         toast.error('В этой игре уже есть соперник');
-        return null;
+        return { success: false };
       }
 
       // Update invite status
@@ -246,14 +261,16 @@ export function useGameInvites() {
         };
       }
 
-      const { error: gameUpdateError } = await supabase
+      const { data: updatedGame, error: gameUpdateError } = await supabase
         .from('games')
         .update({
           opponent_id: user.id,
           status: 'playing',
           game_state: updatedState as Json
         })
-        .eq('id', gameId);
+        .eq('id', gameId)
+        .select()
+        .single();
 
       if (gameUpdateError) throw gameUpdateError;
 
@@ -267,11 +284,19 @@ export function useGameInvites() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Вы присоединились к игре!');
       
-      return gameId;
+      console.log('Accept invite - updated game:', updatedGame);
+      
+      return { 
+        success: true, 
+        game: {
+          ...updatedGame,
+          game_state: updatedGame.game_state as Record<string, unknown>
+        }
+      };
     } catch (error) {
       console.error('Error accepting invite:', error);
       toast.error('Ошибка при принятии приглашения');
-      return null;
+      return { success: false };
     } finally {
       setIsLoading(false);
       fetchPendingInvites();
