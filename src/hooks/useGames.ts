@@ -126,7 +126,9 @@ export function useGames() {
     };
   }, [currentGame?.id, user?.id]);
 
-  async function fetchCurrentGame(gameId: string) {
+  async function fetchCurrentGame(gameId: string): Promise<Game | null> {
+    console.log('fetchCurrentGame called with id:', gameId);
+    
     const { data, error } = await supabase
       .from('games')
       .select(`
@@ -143,8 +145,15 @@ export function useGames() {
     }
 
     const game = parseGameRow(data as GameRow);
+    console.log('Fetched game:', game);
     setCurrentGame(game);
     return game;
+  }
+  
+  // Allow setting currentGame directly (for accept invite flow)
+  function setGame(game: Game | null) {
+    console.log('setGame called:', game);
+    setCurrentGame(game);
   }
 
   async function createGame(gameType: GameType, currentBalance: number): Promise<string | null> {
@@ -505,6 +514,7 @@ export function useGames() {
     cancelGame,
     leaveGame,
     fetchCurrentGame,
+    setGame,
     GAME_NAMES,
     BET_AMOUNT,
     WIN_REWARD
