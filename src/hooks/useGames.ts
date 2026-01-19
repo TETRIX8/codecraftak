@@ -100,10 +100,22 @@ export function useGames() {
           schema: 'public',
           table: 'games'
         },
-        () => {
+        async (payload) => {
+          console.log('Games realtime update:', payload);
           fetchGames();
+          
+          // If we're in a game or created a game that was updated
           if (currentGame) {
-            fetchCurrentGame(currentGame.id);
+            await fetchCurrentGame(currentGame.id);
+          }
+          
+          // If we're the creator and someone joined our game
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const updatedGame = payload.new as { id: string; status: string; opponent_id: string | null; creator_id: string };
+            if (updatedGame.status === 'playing' && updatedGame.creator_id === user?.id && updatedGame.opponent_id) {
+              console.log('Opponent joined my game, loading game view');
+              await fetchCurrentGame(updatedGame.id);
+            }
           }
         }
       )
@@ -112,7 +124,7 @@ export function useGames() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentGame?.id]);
+  }, [currentGame?.id, user?.id]);
 
   async function fetchCurrentGame(gameId: string) {
     const { data, error } = await supabase
