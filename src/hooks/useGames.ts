@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -66,9 +66,17 @@ export function useGames() {
   const [games, setGames] = useState<Game[]>([]);
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use ref to track current game ID without causing re-subscriptions
+  const currentGameIdRef = useRef<string | null>(null);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    currentGameIdRef.current = currentGame?.id || null;
+  }, [currentGame?.id]);
 
   // Fetch available games
-  async function fetchGames() {
+  const fetchGames = useCallback(async () => {
     const { data, error } = await supabase
       .from('games')
       .select(`
@@ -85,54 +93,10 @@ export function useGames() {
     }
 
     setGames((data as GameRow[]).map(parseGameRow));
-  }
+  }, []);
 
-  // Store currentGame id in ref to avoid dependency issues
-  const currentGameRef = { current: currentGame?.id };
-  currentGameRef.current = currentGame?.id;
-
-  // Subscribe to realtime updates
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    fetchGames();
-
-    const channel = supabase
-      .channel('games-channel-' + user.id)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'games'
-        },
-        async (payload) => {
-          console.log('Games realtime update:', payload);
-          fetchGames();
-          
-          // If we're in a game, refetch it
-          if (currentGameRef.current) {
-            await fetchCurrentGame(currentGameRef.current);
-          }
-          
-          // If we're the creator and someone joined our game
-          if (payload.eventType === 'UPDATE' && payload.new) {
-            const updatedGame = payload.new as { id: string; status: string; opponent_id: string | null; creator_id: string };
-            if (updatedGame.status === 'playing' && updatedGame.creator_id === user.id && updatedGame.opponent_id) {
-              console.log('Opponent joined my game, loading game view');
-              await fetchCurrentGame(updatedGame.id);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  async function fetchCurrentGame(gameId: string): Promise<Game | null> {
+  // Fetch a specific game by ID
+  const fetchCurrentGame = useCallback(async (gameId: string): Promise<Game | null> => {
     console.log('fetchCurrentGame called with id:', gameId);
     
     const { data, error } = await supabase
@@ -154,13 +118,70 @@ export function useGames() {
     console.log('Fetched game:', game);
     setCurrentGame(game);
     return game;
-  }
+  }, []);
   
-  // Allow setting currentGame directly (for accept invite flow)
-  function setGame(game: Game | null) {
+  // Allow setting currentGame directly
+  const setGame = useCallback((game: Game | null) => {
     console.log('setGame called:', game);
     setCurrentGame(game);
-  }
+  }, []);
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    fetchGames();
+
+    const channel = supabase
+      .channel('games-realtime-' + user.id)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'games'
+        },
+        async (payload) => {
+          console.log('Games realtime update:', payload);
+          
+          // Always refresh games list
+          fetchGames();
+          
+          // If we're in a game, refetch it to get latest state
+          const currentId = currentGameIdRef.current;
+          if (currentId) {
+            await fetchCurrentGame(currentId);
+          }
+          
+          // If we're the creator and someone joined our game
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const updatedGame = payload.new as { 
+              id: string; 
+              status: string; 
+              opponent_id: string | null; 
+              creator_id: string;
+            };
+            
+            if (
+              updatedGame.status === 'playing' && 
+              updatedGame.creator_id === user.id && 
+              updatedGame.opponent_id
+            ) {
+              console.log('Opponent joined my game, loading game view');
+              await fetchCurrentGame(updatedGame.id);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Games channel subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up games channel');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchGames, fetchCurrentGame]);
 
   async function createGame(gameType: GameType, currentBalance: number): Promise<string | null> {
     if (!user?.id) {
@@ -212,7 +233,7 @@ export function useGames() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success(`Игра "${GAME_NAMES[gameType]}" создана!`);
       
-      setCurrentGame(parseGameRow(data as GameRow));
+      // Don't set currentGame here - we want user to invite someone first
       return data.id;
     } catch (error) {
       console.error('Error creating game:', error);
@@ -223,15 +244,15 @@ export function useGames() {
     }
   }
 
-  async function joinGame(gameId: string, currentBalance: number): Promise<boolean> {
+  async function joinGame(gameId: string, currentBalance: number): Promise<Game | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
-      return false;
+      return null;
     }
 
     if (currentBalance < BET_AMOUNT) {
       toast.error('Недостаточно баллов для игры');
-      return false;
+      return null;
     }
 
     setIsLoading(true);
@@ -244,16 +265,24 @@ export function useGames() {
         .eq('id', gameId)
         .single();
 
-      if (fetchError || !game) throw fetchError || new Error('Game not found');
+      if (fetchError || !game) {
+        toast.error('Игра не найдена');
+        return null;
+      }
 
       if (game.creator_id === user.id) {
         toast.error('Вы не можете присоединиться к своей игре');
-        return false;
+        return null;
+      }
+
+      if (game.status !== 'waiting') {
+        toast.error('Игра уже началась с другим игроком');
+        return null;
       }
 
       if (game.opponent_id) {
         toast.error('В этой игре уже есть соперник');
-        return false;
+        return null;
       }
 
       // Deduct bet
@@ -304,23 +333,26 @@ export function useGames() {
       if (updatedGame) {
         const parsedGame = parseGameRow(updatedGame as GameRow);
         setCurrentGame(parsedGame);
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        toast.success('Вы присоединились к игре!');
+        return parsedGame;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      toast.success('Вы присоединились к игре!');
-      
-      return true;
+      return null;
     } catch (error) {
       console.error('Error joining game:', error);
       toast.error('Ошибка при присоединении к игре');
-      return false;
+      return null;
     } finally {
       setIsLoading(false);
     }
   }
 
   async function makeMove(gameId: string, move: Record<string, unknown>): Promise<boolean> {
-    if (!user?.id || !currentGame) return false;
+    if (!user?.id || !currentGame) {
+      console.error('makeMove: no user or currentGame');
+      return false;
+    }
 
     try {
       const { data: game, error: fetchError } = await supabase
@@ -329,7 +361,10 @@ export function useGames() {
         .eq('id', gameId)
         .single();
 
-      if (fetchError || !game) throw fetchError || new Error('Game not found');
+      if (fetchError || !game) {
+        console.error('makeMove: game not found', fetchError);
+        return false;
+      }
 
       const gameState = (game.game_state as Record<string, unknown>) || {};
       let newState: Json = JSON.parse(JSON.stringify(gameState));
@@ -497,6 +532,11 @@ export function useGames() {
 
         await supabase.from('games').delete().eq('id', gameId);
         
+        // Clear current game if it was this one
+        if (currentGame?.id === gameId) {
+          setCurrentGame(null);
+        }
+        
         queryClient.invalidateQueries({ queryKey: ['profile'] });
         toast.success('Игра отменена, балл возвращён');
       }
@@ -530,8 +570,8 @@ export function useGames() {
 function checkTicTacToeWinner(board: (string | null)[]): string | null {
   const lines = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-    [0, 4, 8], [2, 4, 6] // diagonals
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+    [0, 4, 8], [2, 4, 6]             // diagonals
   ];
 
   for (const [a, b, c] of lines) {
@@ -543,12 +583,12 @@ function checkTicTacToeWinner(board: (string | null)[]): string | null {
 }
 
 function determineRPSWinner(
-  choice1: string, 
-  choice2: string, 
-  player1: string, 
-  player2: string
+  creatorChoice: string, 
+  opponentChoice: string, 
+  creatorId: string, 
+  opponentId: string
 ): string | null {
-  if (choice1 === choice2) return null;
+  if (creatorChoice === opponentChoice) return null;
   
   const wins: Record<string, string> = {
     rock: 'scissors',
@@ -556,18 +596,22 @@ function determineRPSWinner(
     paper: 'rock'
   };
   
-  return wins[choice1] === choice2 ? player1 : player2;
+  return wins[creatorChoice] === opponentChoice ? creatorId : opponentId;
 }
 
 function generateQuizQuestions() {
-  const questions = [
-    { q: 'Что выведет console.log(typeof null)?', options: ['object', 'null', 'undefined', 'boolean'], answer: 0 },
-    { q: 'Какой метод добавляет элемент в конец массива?', options: ['push', 'pop', 'shift', 'unshift'], answer: 0 },
-    { q: 'Что такое замыкание (closure)?', options: ['Функция с доступом к внешним переменным', 'Цикл', 'Объект', 'Массив'], answer: 0 },
-    { q: 'Чему равно 2 + "2"?', options: ['"22"', '4', 'NaN', 'undefined'], answer: 0 },
-    { q: 'Какой оператор проверяет равенство без приведения типов?', options: ['===', '==', '!=', '='], answer: 0 },
+  const allQuestions = [
+    { q: "Что выведет typeof null?", options: ["null", "undefined", "object", "number"], answer: 2 },
+    { q: "Какой метод добавляет элемент в конец массива?", options: ["unshift()", "push()", "pop()", "shift()"], answer: 1 },
+    { q: "Что такое замыкание?", options: ["Тип данных", "Функция с доступом к внешней области", "Массив", "Объект"], answer: 1 },
+    { q: "Как проверить, является ли значение массивом?", options: ["typeof x", "Array.isArray(x)", "x.isArray()", "x instanceof Object"], answer: 1 },
+    { q: "Что делает === в JavaScript?", options: ["Присваивание", "Сравнение без приведения типов", "Сравнение с приведением типов", "Логическое И"], answer: 1 },
+    { q: "Какой результат '2' + 2?", options: ["4", "22", "NaN", "undefined"], answer: 1 },
+    { q: "Что такое hoisting?", options: ["Подъём объявлений", "Цикл", "Условие", "Функция"], answer: 0 },
+    { q: "Какой метод удаляет последний элемент массива?", options: ["pop()", "push()", "shift()", "splice()"], answer: 0 },
+    { q: "Что возвращает typeof []?", options: ["array", "object", "undefined", "null"], answer: 1 },
+    { q: "Как создать промис?", options: ["new Promise()", "Promise.new()", "create Promise()", "Promise()"], answer: 0 }
   ];
   
-  // Shuffle and pick 3
-  return questions.sort(() => Math.random() - 0.5).slice(0, 3);
+  return allQuestions.sort(() => Math.random() - 0.5).slice(0, 5);
 }
