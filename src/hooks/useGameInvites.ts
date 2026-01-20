@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
+import type { Game } from './useGames';
 
 export interface GameInvite {
   id: string;
@@ -23,7 +24,7 @@ export function useGameInvites() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch pending invites for current user
-  async function fetchPendingInvites() {
+  const fetchPendingInvites = useCallback(async () => {
     if (!user?.id) return;
 
     const { data, error } = await supabase
@@ -31,7 +32,7 @@ export function useGameInvites() {
       .select(`
         *,
         sender:profiles!game_invites_sender_id_fkey(nickname, avatar_url),
-        game:games!game_invites_game_id_fkey(game_type, bet_amount)
+        game:games!game_invites_game_id_fkey(game_type, bet_amount, status)
       `)
       .eq('recipient_id', user.id)
       .eq('status', 'pending')
@@ -42,13 +43,21 @@ export function useGameInvites() {
       return;
     }
 
-    setPendingInvites((data || []).map(invite => ({
+    // Filter out invites for games that are no longer waiting
+    const validInvites = (data || []).filter(invite => 
+      invite.game && (invite.game as { status?: string }).status === 'waiting'
+    );
+
+    setPendingInvites(validInvites.map(invite => ({
       ...invite,
       status: invite.status as 'pending' | 'accepted' | 'declined',
       sender: invite.sender || undefined,
-      game: invite.game || undefined
+      game: invite.game ? {
+        game_type: (invite.game as { game_type: string }).game_type,
+        bet_amount: (invite.game as { bet_amount: number }).bet_amount
+      } : undefined
     })));
-  }
+  }, [user?.id]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -57,7 +66,7 @@ export function useGameInvites() {
     fetchPendingInvites();
 
     const channel = supabase
-      .channel('game-invites-channel')
+      .channel('game-invites-' + user.id)
       .on(
         'postgres_changes',
         {
@@ -76,12 +85,14 @@ export function useGameInvites() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Game invites channel status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, fetchPendingInvites]);
 
   // Send game invite
   async function sendInvite(gameId: string, recipientId: string): Promise<boolean> {
@@ -99,14 +110,13 @@ export function useGameInvites() {
 
     try {
       // Check if invite already exists
-      const { data: existingInvite } = await supabase
+      const { data: existingInvites } = await supabase
         .from('game_invites')
         .select('id')
         .eq('game_id', gameId)
-        .eq('recipient_id', recipientId)
-        .single();
+        .eq('recipient_id', recipientId);
 
-      if (existingInvite) {
+      if (existingInvites && existingInvites.length > 0) {
         toast.error('Приглашение уже отправлено этому пользователю');
         return false;
       }
@@ -149,7 +159,7 @@ export function useGameInvites() {
         .eq('id', user.id)
         .single();
 
-      const { error: notifError } = await supabase
+      await supabase
         .from('notifications')
         .insert({
           user_id: recipientId,
@@ -159,10 +169,6 @@ export function useGameInvites() {
           type: 'game_invite',
           is_global: false
         });
-
-      if (notifError) {
-        console.error('Error sending notification:', notifError);
-      }
 
       toast.success(`Приглашение отправлено ${recipient?.nickname || 'пользователю'}`);
       return true;
@@ -178,19 +184,7 @@ export function useGameInvites() {
   // Accept invite - returns the full game object on success
   async function acceptInvite(inviteId: string, gameId: string, currentBalance: number): Promise<{
     success: boolean;
-    game?: {
-      id: string;
-      game_type: string;
-      status: string;
-      creator_id: string;
-      opponent_id: string | null;
-      winner_id: string | null;
-      game_state: Record<string, unknown>;
-      current_turn: string | null;
-      bet_amount: number;
-      created_at: string;
-      updated_at: string;
-    };
+    game?: Game;
   }> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
@@ -214,28 +208,29 @@ export function useGameInvites() {
 
       if (fetchError || !game) {
         toast.error('Игра не найдена или уже началась');
+        await cleanupInvite(inviteId);
         return { success: false };
       }
 
       if (game.status !== 'waiting') {
         toast.error('Игра уже началась с другим игроком');
+        await cleanupInvite(inviteId);
         return { success: false };
       }
 
       if (game.opponent_id) {
         toast.error('В этой игре уже есть соперник');
+        await cleanupInvite(inviteId);
         return { success: false };
       }
 
-      // Update invite status
-      const { error: inviteError } = await supabase
+      // Update invite status first
+      await supabase
         .from('game_invites')
         .update({ status: 'accepted' })
         .eq('id', inviteId);
 
-      if (inviteError) throw inviteError;
-
-      // Deduct bet
+      // Deduct bet from joiner
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ review_balance: currentBalance - 1 })
@@ -261,6 +256,7 @@ export function useGameInvites() {
         };
       }
 
+      // Join the game
       const { data: updatedGame, error: gameUpdateError } = await supabase
         .from('games')
         .update({
@@ -269,30 +265,50 @@ export function useGameInvites() {
           game_state: updatedState as Json
         })
         .eq('id', gameId)
-        .select()
+        .eq('status', 'waiting') // Extra safety check
+        .select(`
+          *,
+          creator:profiles!games_creator_id_fkey(nickname, avatar_url),
+          opponent:profiles!games_opponent_id_fkey(nickname, avatar_url)
+        `)
         .single();
 
-      if (gameUpdateError) throw gameUpdateError;
+      if (gameUpdateError) {
+        console.error('Error updating game:', gameUpdateError);
+        toast.error('Не удалось присоединиться к игре');
+        return { success: false };
+      }
 
-      // Delete other pending invites for this game
+      // Delete all pending invites for this game
       await supabase
         .from('game_invites')
         .delete()
         .eq('game_id', gameId)
-        .neq('id', inviteId);
+        .eq('status', 'pending');
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Вы присоединились к игре!');
       
       console.log('Accept invite - updated game:', updatedGame);
       
-      return { 
-        success: true, 
-        game: {
-          ...updatedGame,
-          game_state: updatedGame.game_state as Record<string, unknown>
-        }
+      // Parse and return the game
+      const parsedGame: Game = {
+        id: updatedGame.id,
+        game_type: updatedGame.game_type as Game['game_type'],
+        status: updatedGame.status as Game['status'],
+        creator_id: updatedGame.creator_id,
+        opponent_id: updatedGame.opponent_id,
+        winner_id: updatedGame.winner_id,
+        game_state: updatedGame.game_state as Record<string, unknown>,
+        current_turn: updatedGame.current_turn,
+        bet_amount: updatedGame.bet_amount,
+        created_at: updatedGame.created_at,
+        updated_at: updatedGame.updated_at,
+        creator: updatedGame.creator || undefined,
+        opponent: updatedGame.opponent || undefined
       };
+      
+      return { success: true, game: parsedGame };
     } catch (error) {
       console.error('Error accepting invite:', error);
       toast.error('Ошибка при принятии приглашения');
@@ -301,6 +317,14 @@ export function useGameInvites() {
       setIsLoading(false);
       fetchPendingInvites();
     }
+  }
+
+  async function cleanupInvite(inviteId: string) {
+    await supabase
+      .from('game_invites')
+      .update({ status: 'declined' })
+      .eq('id', inviteId);
+    fetchPendingInvites();
   }
 
   // Decline invite
@@ -339,7 +363,7 @@ export function useGameInvites() {
   };
 }
 
-// Quiz questions generator (moved from useGames)
+// Quiz questions generator
 function generateQuizQuestions() {
   const allQuestions = [
     { q: "Что выведет typeof null?", options: ["null", "undefined", "object", "number"], answer: 2 },

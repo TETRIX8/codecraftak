@@ -111,20 +111,8 @@ export default function Games() {
     
     if (result.success && result.game) {
       // Immediately set the game to show game view
-      console.log('Setting game directly...');
-      setGame({
-        id: result.game.id,
-        game_type: result.game.game_type as GameType,
-        status: result.game.status as 'waiting' | 'playing' | 'finished',
-        creator_id: result.game.creator_id,
-        opponent_id: result.game.opponent_id,
-        winner_id: result.game.winner_id,
-        game_state: result.game.game_state,
-        current_turn: result.game.current_turn,
-        bet_amount: result.game.bet_amount,
-        created_at: result.game.created_at,
-        updated_at: result.game.updated_at,
-      });
+      console.log('Setting game directly:', result.game);
+      setGame(result.game);
       refetchProfile();
     }
   };
