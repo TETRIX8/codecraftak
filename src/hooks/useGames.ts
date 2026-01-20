@@ -87,12 +87,18 @@ export function useGames() {
     setGames((data as GameRow[]).map(parseGameRow));
   }
 
+  // Store currentGame id in ref to avoid dependency issues
+  const currentGameRef = { current: currentGame?.id };
+  currentGameRef.current = currentGame?.id;
+
   // Subscribe to realtime updates
   useEffect(() => {
+    if (!user?.id) return;
+    
     fetchGames();
 
     const channel = supabase
-      .channel('games-channel')
+      .channel('games-channel-' + user.id)
       .on(
         'postgres_changes',
         {
@@ -104,15 +110,15 @@ export function useGames() {
           console.log('Games realtime update:', payload);
           fetchGames();
           
-          // If we're in a game or created a game that was updated
-          if (currentGame) {
-            await fetchCurrentGame(currentGame.id);
+          // If we're in a game, refetch it
+          if (currentGameRef.current) {
+            await fetchCurrentGame(currentGameRef.current);
           }
           
           // If we're the creator and someone joined our game
           if (payload.eventType === 'UPDATE' && payload.new) {
             const updatedGame = payload.new as { id: string; status: string; opponent_id: string | null; creator_id: string };
-            if (updatedGame.status === 'playing' && updatedGame.creator_id === user?.id && updatedGame.opponent_id) {
+            if (updatedGame.status === 'playing' && updatedGame.creator_id === user.id && updatedGame.opponent_id) {
               console.log('Opponent joined my game, loading game view');
               await fetchCurrentGame(updatedGame.id);
             }
@@ -124,7 +130,7 @@ export function useGames() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentGame?.id, user?.id]);
+  }, [user?.id]);
 
   async function fetchCurrentGame(gameId: string): Promise<Game | null> {
     console.log('fetchCurrentGame called with id:', gameId);

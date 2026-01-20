@@ -110,9 +110,21 @@ export default function Games() {
     console.log('acceptInvite result:', result);
     
     if (result.success && result.game) {
-      // Immediately load the game view by fetching the full game data
-      console.log('Fetching full game data...');
-      await fetchCurrentGame(result.game.id);
+      // Immediately set the game to show game view
+      console.log('Setting game directly...');
+      setGame({
+        id: result.game.id,
+        game_type: result.game.game_type as GameType,
+        status: result.game.status as 'waiting' | 'playing' | 'finished',
+        creator_id: result.game.creator_id,
+        opponent_id: result.game.opponent_id,
+        winner_id: result.game.winner_id,
+        game_state: result.game.game_state,
+        current_turn: result.game.current_turn,
+        bet_amount: result.game.bet_amount,
+        created_at: result.game.created_at,
+        updated_at: result.game.updated_at,
+      });
       refetchProfile();
     }
   };
