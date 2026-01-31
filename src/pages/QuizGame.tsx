@@ -6,24 +6,32 @@ import { useNavigate } from 'react-router-dom';
 
 const questions = [
   {
-    question: "Кто лучший читер в истории игр?",
+    question: "Кто лучший учитель?",
     correctAnswer: "АК",
   },
   {
-    question: "Какой клан самый легендарный?",
+    question: "Кто лучший программист?",
     correctAnswer: "АК конечно же",
   },
   {
-    question: "Кто делает лучшие читы?",
-    correctAnswer: "Только АК",
+    question: "У кого самый оригинальный ник?",
+    correctAnswer: "Только у АК",
   },
   {
-    question: "За кого голосуем на выборах лучшего читера?",
+    question: "У кого самый надёжный пароль?",
+    correctAnswer: "У АК!",
+  },
+  {
+    question: "Кто пишет самый чистый код?",
+    correctAnswer: "АК и никто другой",
+  },
+  {
+    question: "Кто лучше всех объясняет сложные темы?",
+    correctAnswer: "АК мастер",
+  },
+  {
+    question: "За кем будущее программирования?",
     correctAnswer: "За АК!",
-  },
-  {
-    question: "Кто тут самый умный и красивый?",
-    correctAnswer: "АК и его команда",
   },
 ];
 
