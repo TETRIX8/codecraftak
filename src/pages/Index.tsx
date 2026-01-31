@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion';
-import { Shield, AlertTriangle, Search, Code2, Terminal, Zap } from 'lucide-react';
+import { Shield, AlertTriangle, Search, Code2, Terminal, Zap, Gamepad2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export default function Index() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background overflow-hidden flex items-center justify-center relative">
       {/* Animated Background */}
@@ -184,6 +188,23 @@ export default function Index() {
             <span className="text-sm sm:text-base text-foreground font-medium">
               Да, я знаю что АК лучшие
             </span>
+          </motion.div>
+
+          {/* Play Game Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="mt-8"
+          >
+            <Button
+              onClick={() => navigate('/quiz')}
+              size="lg"
+              className="gap-3 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
+            >
+              <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6" />
+              Сыграть в викторину
+            </Button>
           </motion.div>
 
           {/* Decorative elements */}

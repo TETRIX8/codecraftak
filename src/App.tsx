@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import Index from "./pages/Index";
+import QuizGame from "./pages/QuizGame";
 import Blocked from "./pages/Blocked";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Layout>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/quiz" element={<QuizGame />} />
               <Route path="*" element={<Blocked />} />
             </Routes>
           </Layout>
