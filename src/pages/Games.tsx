@@ -19,12 +19,14 @@ import {
   Circle,
   Hand,
   Scissors,
-  FileText,
   Loader2,
   ArrowLeft,
   Crown,
   Mail,
-  UserPlus
+  UserPlus,
+  Ship,
+  Target,
+  Skull
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
@@ -174,11 +176,12 @@ export default function Games() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  {game?.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
-                  {game?.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
-                  {game?.game_type === 'quiz' && <FileText className="h-5 w-5 text-primary" />}
-                </div>
+<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  {game?.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
+                                  {game?.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
+                                  {game?.game_type === 'battleship' && <Ship className="h-5 w-5 text-primary" />}
+                                  {game?.game_type === 'russian-roulette' && <Target className="h-5 w-5 text-primary" />}
+                                </div>
                 <div>
                   <p className="font-medium">{GAME_NAMES[game?.game_type || 'tic-tac-toe']}</p>
                   <p className="text-sm text-muted-foreground">Ставка: {BET_AMOUNT} балл</p>
@@ -309,10 +312,20 @@ export default function Games() {
                 onCreate={handleCreateGame}
               />
               <GameTypeCard
-                type="quiz"
-                title="Викторина"
-                description="Проверьте знания JavaScript"
-                icon={<FileText className="h-5 w-5" />}
+                type="battleship"
+                title="Морской бой"
+                description="Потопите корабли противника!"
+                icon={<Ship className="h-5 w-5" />}
+                balance={balance}
+                betAmount={BET_AMOUNT}
+                isLoading={isLoading}
+                onCreate={handleCreateGame}
+              />
+              <GameTypeCard
+                type="russian-roulette"
+                title="Русская рулетка"
+                description="Испытай удачу!"
+                icon={<Target className="h-5 w-5" />}
                 balance={balance}
                 betAmount={BET_AMOUNT}
                 isLoading={isLoading}
@@ -339,7 +352,8 @@ export default function Games() {
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           {game.game_type === 'tic-tac-toe' && <X className="h-5 w-5 text-primary" />}
                           {game.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
-                          {game.game_type === 'quiz' && <FileText className="h-5 w-5 text-primary" />}
+                          {game.game_type === 'battleship' && <Ship className="h-5 w-5 text-primary" />}
+                          {game.game_type === 'russian-roulette' && <Target className="h-5 w-5 text-primary" />}
                         </div>
                         <div>
                           <p className="font-medium">{GAME_NAMES[game.game_type]}</p>
@@ -545,8 +559,16 @@ function GameView({
               />
             )}
 
-            {game.game_type === 'quiz' && (
-              <QuizBoard 
+            {game.game_type === 'battleship' && (
+              <BattleshipBoard 
+                game={game} 
+                userId={userId}
+                onMove={onMove}
+              />
+            )}
+
+            {game.game_type === 'russian-roulette' && (
+              <RussianRouletteBoard 
                 game={game} 
                 userId={userId}
                 onMove={onMove}
@@ -663,7 +685,7 @@ function RPSBoard({
   );
 }
 
-function QuizBoard({ 
+function BattleshipBoard({ 
   game, 
   userId, 
   onMove 
@@ -672,71 +694,317 @@ function QuizBoard({
   userId: string;
   onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
 }) {
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [placingShips, setPlacingShips] = useState<number[][]>([]);
+  const [currentShip, setCurrentShip] = useState<number[]>([]);
+  const [isHorizontal, setIsHorizontal] = useState(true);
+  
   const gameState = game.game_state as { 
-    scores: Record<string, number>; 
-    currentQuestion: number;
-    questions: Array<{ q: string; options: string[]; answer: number }>;
-    answered: Record<string, boolean>;
+    boards: Record<string, unknown[]>;
+    shots: Record<string, number[]>;
+    ships: Record<string, number[][]>;
+    phase: string;
+    ready: Record<string, boolean>;
+    lastShot?: { player: string; position: number; hit: boolean };
   };
   
-  const currentQ = gameState.currentQuestion || 0;
-  const questions = gameState.questions || [];
-  const question = questions[currentQ];
-  const hasAnswered = gameState.answered?.[userId];
-  const myScore = gameState.scores?.[userId] || 0;
+  const phase = gameState.phase || 'placement';
+  const isReady = gameState.ready?.[userId] || false;
+  const myShips = gameState.ships?.[userId] || [];
+  const opponentId = game.creator_id === userId ? game.opponent_id : game.creator_id;
+  const myShots = gameState.shots?.[userId] || [];
+  const opponentShips = opponentId ? gameState.ships?.[opponentId] || [] : [];
+  const opponentAllCells = opponentShips.flat();
+  const isMyTurn = game.current_turn === userId;
 
-  if (!question) {
+  // Ship sizes to place
+  const shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+  const currentShipSize = shipSizes[placingShips.length] || 0;
+
+  const handleCellClick = (index: number) => {
+    if (phase === 'placement' && !isReady) {
+      if (currentShipSize === 0) return;
+      
+      // Calculate ship cells
+      const cells: number[] = [];
+      const row = Math.floor(index / 10);
+      const col = index % 10;
+      
+      for (let i = 0; i < currentShipSize; i++) {
+        if (isHorizontal) {
+          if (col + i >= 10) return; // Out of bounds
+          cells.push(row * 10 + col + i);
+        } else {
+          if (row + i >= 10) return; // Out of bounds
+          cells.push((row + i) * 10 + col);
+        }
+      }
+      
+      // Check if cells are free
+      const allPlaced = placingShips.flat();
+      if (cells.some(c => allPlaced.includes(c))) return;
+      
+      const newShips = [...placingShips, cells];
+      setPlacingShips(newShips);
+      
+      // If all ships placed, submit
+      if (newShips.length === shipSizes.length) {
+        onMove(game.id, { ships: newShips });
+      }
+    } else if (phase === 'battle' && isMyTurn) {
+      // Shooting phase
+      if (myShots.includes(index)) return; // Already shot here
+      onMove(game.id, { position: index });
+    }
+  };
+
+  const renderBoard = (isOpponentBoard: boolean) => {
+    const allPlacedCells = placingShips.flat();
+    const finalShipCells = myShips.flat();
+    
+    return (
+      <div className="grid grid-cols-10 gap-0.5 max-w-[280px] mx-auto">
+        {Array(100).fill(null).map((_, index) => {
+          let cellClass = 'aspect-square bg-muted/50 hover:bg-primary/20 transition-colors cursor-pointer text-xs flex items-center justify-center';
+          
+          if (isOpponentBoard) {
+            // Opponent board - show our shots
+            if (myShots.includes(index)) {
+              if (opponentAllCells.includes(index)) {
+                cellClass = 'aspect-square bg-red-500 text-white';
+              } else {
+                cellClass = 'aspect-square bg-blue-500/50';
+              }
+            }
+          } else {
+            // Our board - show our ships
+            if (phase === 'placement') {
+              if (allPlacedCells.includes(index)) {
+                cellClass = 'aspect-square bg-primary';
+              }
+            } else {
+              if (finalShipCells.includes(index)) {
+                cellClass = 'aspect-square bg-primary';
+              }
+            }
+          }
+          
+          return (
+            <motion.button
+              key={index}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => isOpponentBoard && handleCellClick(index)}
+              className={cellClass}
+              disabled={!isOpponentBoard || !isMyTurn}
+            >
+              {isOpponentBoard && myShots.includes(index) && (
+                opponentAllCells.includes(index) ? <X className="h-3 w-3" /> : <Circle className="h-2 w-2" />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (phase === 'placement') {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
-          <p>Загрузка вопросов...</p>
+        <CardContent className="p-6 space-y-4">
+          {isReady ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin text-primary" />
+              <p className="text-lg">Ожидание соперника...</p>
+              <p className="text-muted-foreground">Противник расставляет корабли</p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center">
+                <p className="font-medium">Расставьте корабли</p>
+                <p className="text-sm text-muted-foreground">
+                  Текущий корабль: {currentShipSize} клеток ({placingShips.length + 1}/{shipSizes.length})
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setIsHorizontal(!isHorizontal)}
+                >
+                  {isHorizontal ? 'Горизонтально' : 'Вертикально'}
+                </Button>
+              </div>
+              <div 
+                className="grid grid-cols-10 gap-0.5 max-w-[280px] mx-auto"
+              >
+                {Array(100).fill(null).map((_, index) => {
+                  const allPlacedCells = placingShips.flat();
+                  let cellClass = 'aspect-square bg-muted/50 hover:bg-primary/20 transition-colors cursor-pointer';
+                  
+                  if (allPlacedCells.includes(index)) {
+                    cellClass = 'aspect-square bg-primary cursor-not-allowed';
+                  }
+                  
+                  return (
+                    <motion.button
+                      key={index}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleCellClick(index)}
+                      className={cellClass}
+                    />
+                  );
+                })}
+              </div>
+              {placingShips.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setPlacingShips(placingShips.slice(0, -1))}
+                >
+                  Отменить последний корабль
+                </Button>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
     );
   }
 
-  const handleAnswer = async (optionIndex: number) => {
-    setSelectedAnswer(optionIndex);
-    await onMove(game.id, { correct: optionIndex === question.answer });
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div className="text-center">
+          <p className={`font-medium ${isMyTurn ? 'text-green-500' : 'text-muted-foreground'}`}>
+            {isMyTurn ? 'Ваш ход! Стреляйте!' : 'Ход противника...'}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-center mb-2 text-muted-foreground">Ваше поле</p>
+            {renderBoard(false)}
+          </div>
+          <div>
+            <p className="text-sm text-center mb-2 text-muted-foreground">Поле противника</p>
+            {renderBoard(true)}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RussianRouletteBoard({ 
+  game, 
+  userId, 
+  onMove 
+}: { 
+  game: Game; 
+  userId: string;
+  onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
+}) {
+  const [isSpinning, setIsSpinning] = useState(false);
+  
+  const gameState = game.game_state as { 
+    chamber: number;
+    bulletPosition: number;
+    pulls: string[];
+    currentPlayer: string;
+    fired?: boolean;
+    loser?: string;
+  };
+  
+  const chamber = gameState.chamber || 0;
+  const pulls = gameState.pulls || [];
+  const isMyTurn = game.current_turn === userId;
+  const remainingChambers = 6 - chamber;
+
+  const handlePull = async () => {
+    setIsSpinning(true);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Dramatic pause
+    await onMove(game.id, { pull: true });
+    setIsSpinning(false);
   };
 
   return (
     <Card>
-      <CardContent className="p-6 space-y-4">
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Вопрос {currentQ + 1} из {questions.length}</span>
-          <span>Ваш счёт: {myScore}</span>
-        </div>
-        
-        {hasAnswered ? (
-          <div className="text-center py-8">
-            <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
-            <p>Ожидание ответа соперника...</p>
+      <CardContent className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="relative w-32 h-32 mx-auto mb-4">
+            <motion.div
+              animate={isSpinning ? { rotate: 360 } : {}}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="w-full h-full"
+            >
+              <div className="w-full h-full rounded-full border-4 border-muted-foreground flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
+                <div className="grid grid-cols-3 gap-1">
+                  {Array(6).fill(null).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-6 h-6 rounded-full ${
+                        i < chamber 
+                          ? 'bg-muted-foreground/30' 
+                          : 'bg-muted-foreground'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+            <Target className="absolute -top-2 -right-2 h-8 w-8 text-red-500" />
           </div>
-        ) : (
-          <>
-            <p className="text-lg font-medium">{question.q}</p>
-            <div className="space-y-2">
-              {question.options.map((option, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleAnswer(index)}
-                  disabled={selectedAnswer !== null}
-                  className={`w-full p-3 rounded-lg text-left transition-colors ${
-                    selectedAnswer === index 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted hover:bg-primary/20'
-                  }`}
-                >
-                  {option}
-                </motion.button>
-              ))}
+          
+          <p className="text-2xl font-bold">
+            Осталось камер: {remainingChambers}/6
+          </p>
+          <p className="text-muted-foreground">
+            Шанс выстрела: {Math.round((1 / remainingChambers) * 100)}%
+          </p>
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {pulls.map((pullerId, i) => (
+            <div 
+              key={i}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                pullerId === userId 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted'
+              }`}
+            >
+              {i + 1}
             </div>
-          </>
-        )}
+          ))}
+        </div>
+
+        <div className="text-center">
+          {isMyTurn ? (
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="space-y-4"
+            >
+              <p className="text-lg font-medium text-yellow-500">Ваш ход!</p>
+              <Button 
+                size="lg" 
+                variant="destructive"
+                onClick={handlePull}
+                disabled={isSpinning}
+                className="gap-2"
+              >
+                {isSpinning ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Skull className="h-5 w-5" />
+                )}
+                {isSpinning ? 'Щёлк...' : 'Нажать на курок'}
+              </Button>
+            </motion.div>
+          ) : (
+            <div className="py-4">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" />
+              <p className="text-muted-foreground">Ход противника...</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
