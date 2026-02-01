@@ -7,7 +7,8 @@ import {
   X, 
   Circle, 
   Hand, 
-  FileText, 
+  Ship,
+  Target,
   Check, 
   XCircle, 
   Loader2,
@@ -37,8 +38,9 @@ interface GameInviteCardProps {
 
 const GAME_NAMES: Record<string, string> = {
   'tic-tac-toe': 'Крестики-нолики',
-  'quiz': 'Викторина',
-  'rock-paper-scissors': 'Камень-ножницы-бумага'
+  'rock-paper-scissors': 'Камень-ножницы-бумага',
+  'battleship': 'Морской бой',
+  'russian-roulette': 'Русская рулетка'
 };
 
 export function GameInviteCard({ 
@@ -57,8 +59,10 @@ export function GameInviteCard({
         return <div className="flex gap-0.5"><X className="h-5 w-5" /><Circle className="h-5 w-5" /></div>;
       case 'rock-paper-scissors':
         return <Hand className="h-5 w-5" />;
-      case 'quiz':
-        return <FileText className="h-5 w-5" />;
+      case 'battleship':
+        return <Ship className="h-5 w-5" />;
+      case 'russian-roulette':
+        return <Target className="h-5 w-5" />;
       default:
         return null;
     }
