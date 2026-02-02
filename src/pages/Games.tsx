@@ -26,7 +26,8 @@ import {
   UserPlus,
   Ship,
   Target,
-  Skull
+  Skull,
+  FileText
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 

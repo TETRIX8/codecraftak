@@ -18,6 +18,7 @@ import { AdminNotifications } from '@/components/admin/AdminNotifications';
 import { AdminTopics } from '@/components/admin/AdminTopics';
 import { AdminUserRatings } from '@/components/admin/AdminUserRatings';
 import { AdminSolutions } from '@/components/admin/AdminSolutions';
+import { AdminAppeals } from '@/components/admin/AdminAppeals';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -168,6 +169,11 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-background py-24">
       <div className="container mx-auto px-4">
+        {/* Appeals Section */}
+        <div className="mb-8">
+          <AdminAppeals />
+        </div>
+
         {/* Notifications Section */}
         <div className="mb-8">
           <AdminNotifications />
