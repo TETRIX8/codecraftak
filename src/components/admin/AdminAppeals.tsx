@@ -39,7 +39,7 @@ function AppealCard({ appeal }: { appeal: AppealWithDetails }) {
   // Get reviewers who voted to reject (they were "wrong" if we accept the appeal)
   const rejectReviewers = appeal.reviews?.filter(r => r.verdict === 'rejected') || [];
 
-  const handleResolve = async (decision: 'accepted' | 'rejected') => {
+  const handleResolve = async (decision: 'approved' | 'rejected') => {
     if (!comment.trim()) {
       toast.error('Добавьте комментарий к решению');
       return;
@@ -51,9 +51,9 @@ function AppealCard({ appeal }: { appeal: AppealWithDetails }) {
         decision,
         comment,
         solutionId: appeal.solution_id,
-        incorrectReviewerIds: decision === 'accepted' ? selectedReviewers : [],
+        incorrectReviewerIds: decision === 'approved' ? selectedReviewers : [],
       });
-      toast.success(decision === 'accepted' ? 'Апелляция принята' : 'Апелляция отклонена');
+      toast.success(decision === 'approved' ? 'Апелляция принята' : 'Апелляция отклонена');
     } catch (error: any) {
       toast.error(error.message || 'Ошибка при обработке апелляции');
     }
@@ -239,7 +239,7 @@ function AppealCard({ appeal }: { appeal: AppealWithDetails }) {
                 <Button
                   variant="gradient"
                   className="flex-1"
-                  onClick={() => handleResolve('accepted')}
+                  onClick={() => handleResolve('approved')}
                   disabled={resolveAppeal.isPending}
                 >
                   {resolveAppeal.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

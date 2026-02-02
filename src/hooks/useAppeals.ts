@@ -7,7 +7,7 @@ export interface Appeal {
   solution_id: string;
   user_id: string;
   reason: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected';
   resolved_by: string | null;
   resolution_comment: string | null;
   created_at: string;
@@ -182,7 +182,7 @@ export function useResolveAppeal() {
       incorrectReviewerIds,
     }: {
       appealId: string;
-      decision: 'accepted' | 'rejected';
+      decision: 'approved' | 'rejected';
       comment: string;
       solutionId: string;
       incorrectReviewerIds: string[];
@@ -202,7 +202,7 @@ export function useResolveAppeal() {
 
       if (appealError) throw appealError;
 
-      if (decision === 'accepted') {
+      if (decision === 'approved') {
         // If appeal accepted, update solution status to 'accepted'
         const { error: solutionError } = await supabase
           .from('solutions')
