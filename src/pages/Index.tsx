@@ -25,7 +25,9 @@ import {
   BookOpen,
   Layers,
   Globe,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle,
+  Skull
 } from 'lucide-react';
 
 // Animated particles component
@@ -890,6 +892,121 @@ export default function Index() {
             </div>
           </div>
         </section>
+
+        {/* Cheaters Wall of Shame */}
+        <section className="py-16 md:py-24 relative overflow-hidden">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="max-w-lg mx-auto"
+            >
+              {/* Mobile-optimized card */}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.02 }}
+                className="relative"
+              >
+                {/* Animated glow effect */}
+                <motion.div
+                  animate={{ 
+                    opacity: [0.3, 0.6, 0.3],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="absolute -inset-1 bg-gradient-to-br from-red-500/30 to-orange-500/30 rounded-3xl blur-xl"
+                />
+                
+                <div className="relative p-6 md:p-8 rounded-3xl bg-gradient-to-br from-card to-card/80 border-2 border-red-500/30 overflow-hidden">
+                  {/* Background pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute inset-0" style={{
+                      backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0, currentColor 1px, transparent 0, transparent 50%)',
+                      backgroundSize: '20px 20px'
+                    }} />
+                  </div>
+                  
+                  {/* Header */}
+                  <div className="relative flex items-center gap-3 mb-6">
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, -10, 10, 0],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg"
+                    >
+                      <Skull className="w-6 h-6 text-white" />
+                    </motion.div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-bold text-red-400">
+                        Стена позора
+                      </h3>
+                      <p className="text-sm text-muted-foreground">Читеры нашего сайта</p>
+                    </div>
+                  </div>
+                  
+                  {/* Cheaters list */}
+                  <div className="relative space-y-3">
+                    {[
+                      { name: 'Аушев', delay: 0 },
+                      { name: 'Гамурзиев', delay: 0.1 },
+                      { name: 'Илез', delay: 0.2 },
+                      { name: 'Ибрашк', delay: 0.3 },
+                      { name: 'Мансур', delay: 0.4 },
+                    ].map((cheater, index) => (
+                      <motion.div
+                        key={cheater.name}
+                        initial={{ opacity: 0, x: -30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: cheater.delay, duration: 0.4 }}
+                        whileHover={{ x: 5, scale: 1.02 }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-red-500/5 border border-red-500/20 hover:border-red-500/40 transition-all"
+                      >
+                        <motion.div
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center"
+                        >
+                          <AlertTriangle className="w-4 h-4 text-red-400" />
+                        </motion.div>
+                        <span className="font-medium text-foreground">{cheater.name}</span>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          whileInView={{ scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: cheater.delay + 0.3, type: "spring" }}
+                          className="ml-auto px-2 py-1 rounded-md bg-red-500/10 text-xs text-red-400 font-medium"
+                        >
+                          BANNED
+                        </motion.div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  {/* Footer warning */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.6 }}
+                    className="mt-6 pt-4 border-t border-red-500/20 text-center"
+                  >
+                    <p className="text-sm text-muted-foreground">
+                      Не читерьте, будьте честными!
+                    </p>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        <SectionDivider />
 
         {/* CTA Section */}
         <section className="py-32 relative overflow-hidden">
