@@ -321,15 +321,15 @@ export function useGames() {
           symbols: { ...symbols, [user.id]: 'O' } 
         };
       } else if (game.game_type === 'battleship') {
-        const boards = (gameState.boards as Record<string, unknown>) || {};
-        const shots = (gameState.shots as Record<string, unknown>) || {};
-        const ships = (gameState.ships as Record<string, unknown>) || {};
+        const boards = (gameState.boards as Record<string, Json>) || {};
+        const shots = (gameState.shots as Record<string, Json>) || {};
+        const ships = (gameState.ships as Record<string, Json>) || {};
         const ready = (gameState.ready as Record<string, boolean>) || {};
         updatedState = { 
           ...gameState, 
-          boards: { ...boards, [user.id]: Array(100).fill(null) },
-          shots: { ...shots, [user.id]: [] },
-          ships: { ...ships, [user.id]: [] },
+          boards: { ...boards, [user.id]: Array(100).fill(null) } as Record<string, Json>,
+          shots: { ...shots, [user.id]: [] } as Record<string, Json>,
+          ships: { ...ships, [user.id]: [] } as Record<string, Json>,
           ready: { ...ready, [user.id]: false }
         };
       } else if (game.game_type === 'russian-roulette') {

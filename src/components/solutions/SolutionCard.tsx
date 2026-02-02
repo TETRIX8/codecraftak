@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge, DifficultyBadge, LanguageBadge } from '@/components/common/Badges';
 import { SolutionWithTask, useSolutionReviews, useResubmitSolution } from '@/hooks/useSolutions';
 import { useProfile } from '@/hooks/useProfile';
+import { AppealDialog } from '@/components/solutions/AppealDialog';
 import { toast } from 'sonner';
 
 interface SolutionCardProps {
@@ -203,43 +204,48 @@ export function SolutionCard({ solution }: SolutionCardProps) {
             {/* Resubmit Actions */}
             {solution.status === 'rejected' && (
               <div className="p-4 border-t border-border bg-destructive/5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <p className="font-medium text-destructive">Решение отклонено</p>
                     <p className="text-sm text-muted-foreground">
-                      Исправьте код и отправьте повторно (-1 балл)
+                      Исправьте код или оспорьте решение
                     </p>
                   </div>
-                  {isEditing ? (
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setIsEditing(false);
-                          setEditedCode(solution.code);
-                        }}
-                      >
-                        Отмена
-                      </Button>
-                      <Button 
-                        variant="gradient" 
-                        onClick={handleResubmit}
-                        disabled={resubmit.isPending || !canResubmit}
-                      >
-                        {resubmit.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Отправить
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsEditing(true)}
-                      disabled={!canResubmit}
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Пересдать
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isEditing ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditedCode(solution.code);
+                          }}
+                        >
+                          Отмена
+                        </Button>
+                        <Button 
+                          variant="gradient" 
+                          onClick={handleResubmit}
+                          disabled={resubmit.isPending || !canResubmit}
+                        >
+                          {resubmit.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Отправить
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <AppealDialog solutionId={solution.id} />
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsEditing(true)}
+                          disabled={!canResubmit}
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Пересдать
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 {!canResubmit && (profile?.review_balance ?? 0) < 1 && (
                   <p className="text-xs text-muted-foreground mt-2">
