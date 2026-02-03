@@ -47,8 +47,9 @@ const GAME_NAMES: Record<GameType, string> = {
   'russian-roulette': 'Русская рулетка'
 };
 
-const BET_AMOUNT = 1;
-const WIN_REWARD = 2;
+const MIN_BET = 1;
+const MAX_BET = 5;
+const GAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 function parseGameRow(row: GameRow): Game {
   return {
@@ -67,6 +68,17 @@ export function useGames() {
   const [games, setGames] = useState<Game[]>([]);
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastGameCreatedAt, setLastGameCreatedAt] = useState<number | null>(null);
+  
+  // Load last game creation time from localStorage
+  useEffect(() => {
+    if (user?.id) {
+      const stored = localStorage.getItem(`lastGameCreated_${user.id}`);
+      if (stored) {
+        setLastGameCreatedAt(parseInt(stored, 10));
+      }
+    }
+  }, [user?.id]);
   
   // Use ref to track current game ID without causing re-subscriptions
   const currentGameIdRef = useRef<string | null>(null);
@@ -184,13 +196,31 @@ export function useGames() {
     };
   }, [user?.id, fetchGames, fetchCurrentGame]);
 
-  async function createGame(gameType: GameType, currentBalance: number): Promise<string | null> {
+  // Check cooldown
+  function getCooldownRemaining(): number {
+    if (!lastGameCreatedAt) return 0;
+    const elapsed = Date.now() - lastGameCreatedAt;
+    return Math.max(0, GAME_COOLDOWN_MS - elapsed);
+  }
+
+  async function createGame(gameType: GameType, currentBalance: number, betAmount: number = 1): Promise<string | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
       return null;
     }
 
-    if (currentBalance < BET_AMOUNT) {
+    // Check cooldown
+    const cooldownRemaining = getCooldownRemaining();
+    if (cooldownRemaining > 0) {
+      const minutes = Math.ceil(cooldownRemaining / 60000);
+      toast.error(`Подождите ещё ${minutes} мин. перед созданием новой игры`);
+      return null;
+    }
+
+    // Validate bet
+    const validBet = Math.min(MAX_BET, Math.max(MIN_BET, betAmount));
+    
+    if (currentBalance < validBet) {
       toast.error('Недостаточно баллов для игры');
       return null;
     }
@@ -201,7 +231,7 @@ export function useGames() {
       // Deduct bet
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ review_balance: currentBalance - BET_AMOUNT })
+        .update({ review_balance: currentBalance - validBet })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
@@ -239,7 +269,7 @@ export function useGames() {
           game_type: gameType,
           creator_id: user.id,
           current_turn: user.id,
-          bet_amount: BET_AMOUNT,
+          bet_amount: validBet,
           game_state: initialState
         })
         .select()
@@ -247,8 +277,13 @@ export function useGames() {
 
       if (error) throw error;
 
+      // Save cooldown timestamp
+      const now = Date.now();
+      setLastGameCreatedAt(now);
+      localStorage.setItem(`lastGameCreated_${user.id}`, now.toString());
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      toast.success(`Игра "${GAME_NAMES[gameType]}" создана!`);
+      toast.success(`Игра "${GAME_NAMES[gameType]}" создана! Ставка: ${validBet} баллов`);
       
       // Don't set currentGame here - we want user to invite someone first
       return data.id;
@@ -261,13 +296,13 @@ export function useGames() {
     }
   }
 
-  async function joinGame(gameId: string, currentBalance: number): Promise<Game | null> {
+  async function joinGame(gameId: string, currentBalance: number, gameBetAmount: number = 1): Promise<Game | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
       return null;
     }
 
-    if (currentBalance < BET_AMOUNT) {
+    if (currentBalance < gameBetAmount) {
       toast.error('Недостаточно баллов для игры');
       return null;
     }
@@ -302,10 +337,10 @@ export function useGames() {
         return null;
       }
 
-      // Deduct bet
+      // Deduct bet (use game's bet_amount)
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ review_balance: currentBalance - BET_AMOUNT })
+        .update({ review_balance: currentBalance - game.bet_amount })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
@@ -541,9 +576,11 @@ export function useGames() {
       .single();
 
     if (profile) {
+      // Winner gets double the bet amount (both bets go to winner)
+      const winReward = currentGame?.bet_amount ? currentGame.bet_amount * 2 : 2;
       await supabase
         .from('profiles')
-        .update({ review_balance: (profile.review_balance || 0) + WIN_REWARD })
+        .update({ review_balance: (profile.review_balance || 0) + winReward })
         .eq('id', winnerId);
     }
 
@@ -625,9 +662,11 @@ export function useGames() {
     leaveGame,
     fetchCurrentGame,
     setGame,
+    getCooldownRemaining,
     GAME_NAMES,
-    BET_AMOUNT,
-    WIN_REWARD
+    MIN_BET,
+    MAX_BET,
+    GAME_COOLDOWN_MS
   };
 }
 
