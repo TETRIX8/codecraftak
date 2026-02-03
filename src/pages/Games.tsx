@@ -44,9 +44,11 @@ export default function Games() {
     leaveGame,
     fetchCurrentGame,
     setGame,
+    getCooldownRemaining,
     GAME_NAMES, 
-    BET_AMOUNT, 
-    WIN_REWARD 
+    MIN_BET,
+    MAX_BET,
+    GAME_COOLDOWN_MS
   } = useGames();
   
   const { 
@@ -59,6 +61,19 @@ export default function Games() {
   
   const [createdGameId, setCreatedGameId] = useState<string | null>(null);
   const [sentInvites, setSentInvites] = useState<string[]>([]);
+  const [selectedBet, setSelectedBet] = useState(1);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  
+  // Update cooldown timer
+  useEffect(() => {
+    const updateCooldown = () => {
+      setCooldownRemaining(getCooldownRemaining());
+    };
+    
+    updateCooldown();
+    const interval = setInterval(updateCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [getCooldownRemaining]);
   
   // When currentGame becomes active (status === 'playing'), reset createdGameId
   useEffect(() => {
@@ -88,8 +103,8 @@ export default function Games() {
   );
 
   // Handle creating game
-  const handleCreateGame = async (type: GameType) => {
-    const gameId = await createGame(type, balance);
+  const handleCreateGame = async (type: GameType, betAmount: number) => {
+    const gameId = await createGame(type, balance, betAmount);
     if (gameId) {
       setCreatedGameId(gameId);
       setSentInvites([]);
@@ -185,7 +200,7 @@ export default function Games() {
                                 </div>
                 <div>
                   <p className="font-medium">{GAME_NAMES[game?.game_type || 'tic-tac-toe']}</p>
-                  <p className="text-sm text-muted-foreground">Ставка: {BET_AMOUNT} балл</p>
+                  <p className="text-sm text-muted-foreground">Ставка: {game?.bet_amount || 1} балл</p>
                 </div>
               </div>
 
@@ -241,17 +256,32 @@ export default function Games() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+              <Trophy className="h-5 w-5 text-warning" />
               Правила
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>• Ставка за игру: <span className="font-bold text-foreground">{BET_AMOUNT} балл</span></p>
-            <p>• Победитель получает: <span className="font-bold text-green-500">{WIN_REWARD} балла</span></p>
+            <p>• Ставка за игру: <span className="font-bold text-foreground">{MIN_BET}-{MAX_BET} баллов</span></p>
+            <p>• Победитель получает: <span className="font-bold text-success">ставку × 2</span></p>
             <p>• При ничьей баллы возвращаются обоим игрокам</p>
-            <p>• Приглашайте друзей для игры через уведомления</p>
+            <p>• Между созданиями игр: <span className="font-bold text-foreground">5 мин задержка</span></p>
           </CardContent>
         </Card>
+
+        {/* Cooldown warning */}
+        {cooldownRemaining > 0 && (
+          <Card className="border-warning/50 bg-warning/5">
+            <CardContent className="py-4 flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-warning" />
+              <p className="text-sm text-muted-foreground">
+                Вы сможете создать новую игру через{' '}
+                <span className="font-bold text-warning">
+                  {Math.floor(cooldownRemaining / 60000)}:{String(Math.floor((cooldownRemaining % 60000) / 1000)).padStart(2, '0')}
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Pending Invites */}
         {pendingInvites.length > 0 && (
@@ -298,8 +328,10 @@ export default function Games() {
                 description="Классическая игра 3x3"
                 icon={<div className="flex gap-1"><X className="h-5 w-5" /><Circle className="h-5 w-5" /></div>}
                 balance={balance}
-                betAmount={BET_AMOUNT}
+                minBet={MIN_BET}
+                maxBet={MAX_BET}
                 isLoading={isLoading}
+                cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
               />
               <GameTypeCard
@@ -308,8 +340,10 @@ export default function Games() {
                 description="Кто победит в этот раз?"
                 icon={<div className="flex gap-1"><Hand className="h-5 w-5" /><Scissors className="h-5 w-5" /></div>}
                 balance={balance}
-                betAmount={BET_AMOUNT}
+                minBet={MIN_BET}
+                maxBet={MAX_BET}
                 isLoading={isLoading}
+                cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
               />
               <GameTypeCard
@@ -318,8 +352,10 @@ export default function Games() {
                 description="Потопите корабли противника!"
                 icon={<Ship className="h-5 w-5" />}
                 balance={balance}
-                betAmount={BET_AMOUNT}
+                minBet={MIN_BET}
+                maxBet={MAX_BET}
                 isLoading={isLoading}
+                cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
               />
               <GameTypeCard
@@ -328,8 +364,10 @@ export default function Games() {
                 description="Испытай удачу!"
                 icon={<Target className="h-5 w-5" />}
                 balance={balance}
-                betAmount={BET_AMOUNT}
+                minBet={MIN_BET}
+                maxBet={MAX_BET}
                 isLoading={isLoading}
+                cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
               />
             </div>
@@ -402,8 +440,10 @@ function GameTypeCard({
   description, 
   icon, 
   balance, 
-  betAmount, 
+  minBet,
+  maxBet,
   isLoading,
+  cooldownActive,
   onCreate 
 }: {
   type: GameType;
@@ -411,35 +451,68 @@ function GameTypeCard({
   description: string;
   icon: React.ReactNode;
   balance: number;
-  betAmount: number;
+  minBet: number;
+  maxBet: number;
   isLoading: boolean;
-  onCreate: (type: GameType) => Promise<void>;
+  cooldownActive: boolean;
+  onCreate: (type: GameType, betAmount: number) => Promise<void>;
 }) {
+  const [betAmount, setBetAmount] = useState(1);
+  
+  const canCreate = !isLoading && !cooldownActive && balance >= betAmount;
+  
   return (
     <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="flex items-center justify-between p-4">
+      <CardContent className="p-4 space-y-3">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             {icon}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="font-medium">{title}</p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
-        <Button 
-          onClick={() => onCreate(type)}
-          disabled={isLoading || balance < betAmount}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Создать ({betAmount} балл)
-            </>
-          )}
-        </Button>
+        
+        <div className="flex items-center justify-between gap-4">
+          {/* Bet selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Ставка:</span>
+            <div className="flex items-center gap-1">
+              {[...Array(maxBet - minBet + 1)].map((_, i) => {
+                const bet = minBet + i;
+                return (
+                  <Button
+                    key={bet}
+                    size="sm"
+                    variant={betAmount === bet ? "default" : "outline"}
+                    className="h-8 w-8 p-0"
+                    onClick={() => setBetAmount(bet)}
+                    disabled={balance < bet}
+                  >
+                    {bet}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          
+          <Button 
+            onClick={() => onCreate(type, betAmount)}
+            disabled={!canCreate}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : cooldownActive ? (
+              'Подождите...'
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Создать
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
