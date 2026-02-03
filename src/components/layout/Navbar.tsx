@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2 } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Skull } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/users', label: 'Участники', icon: Users },
   { path: '/messages', label: 'Чаты', icon: MessageSquare },
   { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
+  { path: '/cheaters', label: 'Читеры', icon: Skull },
   { path: '/profile', label: 'Профиль', icon: User },
 ];
 

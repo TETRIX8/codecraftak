@@ -19,6 +19,7 @@ import Messages from "./pages/Messages";
 import Topics from "./pages/Topics";
 import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
+import Cheaters from "./pages/Cheaters";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/topics" element={<Topics />} />
               <Route path="/topics/:id" element={<TopicDetail />} />
               <Route path="/games" element={<Games />} />
+              <Route path="/cheaters" element={<Cheaters />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
