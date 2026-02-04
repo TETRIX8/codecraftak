@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Pencil } from 'lucide-react';
+import { Check, Pencil, Upload, Crown, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUpdateProfile, Profile } from '@/hooks/useProfile';
+import { useUpdateProfile, Profile, useLeaderboard } from '@/hooks/useProfile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const AVATAR_OPTIONS = [
@@ -80,7 +82,60 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const [open, setOpen] = useState(false);
   const [nickname, setNickname] = useState(profile.nickname);
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatar_url);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const updateProfile = useUpdateProfile();
+  const { user } = useAuth();
+  const { data: leaderboard } = useLeaderboard();
+
+  // Check if user is in top 3 of leaderboard
+  const isLeader = leaderboard?.slice(0, 3).some(leader => leader.id === user?.id) ?? false;
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Можно загружать только изображения');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Максимальный размер файла 2MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Remove old avatar if exists
+      await supabase.storage.from('avatars').remove([`${user.id}/avatar.png`, `${user.id}/avatar.jpg`, `${user.id}/avatar.jpeg`, `${user.id}/avatar.webp`]);
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setSelectedAvatar(urlData.publicUrl);
+      toast.success('Аватар загружен!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Ошибка при загрузке аватара');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!nickname.trim()) {
@@ -128,7 +183,51 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
           {/* Avatar Selection */}
           <div className="space-y-3">
-            <Label>Выберите аватар</Label>
+            <div className="flex items-center justify-between">
+              <Label>Выберите аватар</Label>
+              {isLeader && (
+                <div className="flex items-center gap-2 text-xs text-accent">
+                  <Crown className="w-4 h-4" />
+                  <span>Топ-3 рейтинга</span>
+                </div>
+              )}
+            </div>
+
+            {/* Custom avatar upload for leaders */}
+            {isLeader && (
+              <div className="mb-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2 border-accent/50 hover:bg-accent/10"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Загрузка...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Загрузить свой аватар
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1 text-center">
+                  Привилегия для топ-3 лидеров рейтинга
+                </p>
+              </div>
+            )}
+
             <div className="max-h-[300px] overflow-y-auto pr-2">
               <div className="grid grid-cols-6 gap-2">
                 {AVATAR_OPTIONS.map((avatar, index) => (
