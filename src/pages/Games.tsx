@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { UserSelector } from '@/components/games/UserSelector';
 import { GameInviteCard } from '@/components/games/GameInviteCard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -771,6 +772,8 @@ function BattleshipBoard({
   const [placingShips, setPlacingShips] = useState<number[][]>([]);
   const [currentShip, setCurrentShip] = useState<number[]>([]);
   const [isHorizontal, setIsHorizontal] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [lastTurnChange, setLastTurnChange] = useState<string | null>(null);
   
   const gameState = game.game_state as { 
     boards: Record<string, unknown[]>;
@@ -786,13 +789,62 @@ function BattleshipBoard({
   const myShips = gameState.ships?.[userId] || [];
   const opponentId = game.creator_id === userId ? game.opponent_id : game.creator_id;
   const myShots = gameState.shots?.[userId] || [];
+  const opponentShots = opponentId ? gameState.shots?.[opponentId] || [] : [];
   const opponentShips = opponentId ? gameState.ships?.[opponentId] || [] : [];
   const opponentAllCells = opponentShips.flat();
+  const myShipCells = myShips.flat();
   const isMyTurn = game.current_turn === userId;
+
+  // Timer for 25 seconds per turn
+  useEffect(() => {
+    if (phase !== 'battle' || game.status !== 'playing') return;
+    
+    // Reset timer when turn changes
+    const turnKey = `${game.current_turn}-${game.updated_at}`;
+    if (turnKey !== lastTurnChange) {
+      setTimeLeft(25);
+      setLastTurnChange(turnKey);
+    }
+    
+    if (!isMyTurn) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          // Time's up - make a random shot
+          clearInterval(timer);
+          const availableCells = Array.from({ length: 100 }, (_, i) => i)
+            .filter(i => !myShots.includes(i));
+          if (availableCells.length > 0) {
+            const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+            onMove(game.id, { position: randomCell });
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [phase, game.status, game.current_turn, game.updated_at, isMyTurn, myShots, game.id, onMove, lastTurnChange]);
 
   // Ship sizes to place
   const shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
   const currentShipSize = shipSizes[placingShips.length] || 0;
+
+  // Helper to find which ship a cell belongs to and its position
+  const getShipInfo = (cellIndex: number, ships: number[][]) => {
+    for (const ship of ships) {
+      const posInShip = ship.indexOf(cellIndex);
+      if (posInShip !== -1) {
+        return { ship, position: posInShip, total: ship.length };
+      }
+    }
+    return null;
+  };
+
+  // Get hit cells on my ships (opponent's shots that hit my ships)
+  const myHitCells = opponentShots.filter(shot => myShipCells.includes(shot));
 
   const handleCellClick = (index: number) => {
     if (phase === 'placement' && !isReady) {
@@ -839,25 +891,50 @@ function BattleshipBoard({
       <div className="grid grid-cols-10 gap-0.5 max-w-[280px] mx-auto">
         {Array(100).fill(null).map((_, index) => {
           let cellClass = 'aspect-square bg-muted/50 hover:bg-primary/20 transition-colors cursor-pointer text-xs flex items-center justify-center';
+          let cellContent: React.ReactNode = null;
           
           if (isOpponentBoard) {
             // Opponent board - show our shots
             if (myShots.includes(index)) {
               if (opponentAllCells.includes(index)) {
-                cellClass = 'aspect-square bg-red-500 text-white';
+                cellClass = 'aspect-square bg-red-500 text-white flex items-center justify-center';
+                cellContent = <X className="h-3 w-3" />;
               } else {
-                cellClass = 'aspect-square bg-blue-500/50';
+                cellClass = 'aspect-square bg-blue-500/50 flex items-center justify-center';
+                cellContent = <Circle className="h-2 w-2" />;
               }
             }
           } else {
-            // Our board - show our ships
+            // Our board - show our ships and hits on them
             if (phase === 'placement') {
               if (allPlacedCells.includes(index)) {
                 cellClass = 'aspect-square bg-primary';
               }
             } else {
+              // Battle phase - show ships with damage info
               if (finalShipCells.includes(index)) {
-                cellClass = 'aspect-square bg-primary';
+                const shipInfo = getShipInfo(index, myShips);
+                const isHit = myHitCells.includes(index);
+                
+                if (isHit) {
+                  // Show hit with position indicator
+                  cellClass = 'aspect-square bg-red-500 text-white flex items-center justify-center font-bold text-xs';
+                  if (shipInfo) {
+                    cellContent = <span>{shipInfo.position + 1}/{shipInfo.total}</span>;
+                  } else {
+                    cellContent = <X className="h-3 w-3" />;
+                  }
+                } else {
+                  // Intact ship cell
+                  cellClass = 'aspect-square bg-primary flex items-center justify-center';
+                  if (shipInfo) {
+                    cellContent = <span className="text-[8px] text-primary-foreground/60">{shipInfo.position + 1}</span>;
+                  }
+                }
+              } else if (opponentShots.includes(index)) {
+                // Miss on my board
+                cellClass = 'aspect-square bg-blue-500/30 flex items-center justify-center';
+                cellContent = <Circle className="h-2 w-2 text-blue-500" />;
               }
             }
           }
@@ -870,9 +947,7 @@ function BattleshipBoard({
               className={cellClass}
               disabled={!isOpponentBoard || !isMyTurn}
             >
-              {isOpponentBoard && myShots.includes(index) && (
-                opponentAllCells.includes(index) ? <X className="h-3 w-3" /> : <Circle className="h-2 w-2" />
-              )}
+              {cellContent}
             </motion.button>
           );
         })}
@@ -946,15 +1021,28 @@ function BattleshipBoard({
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <p className={`font-medium ${isMyTurn ? 'text-green-500' : 'text-muted-foreground'}`}>
             {isMyTurn ? 'Ваш ход! Стреляйте!' : 'Ход противника...'}
           </p>
+          {/* Timer */}
+          <div className="flex items-center justify-center gap-2">
+            <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
+              {timeLeft}с
+            </div>
+            <Progress 
+              value={(timeLeft / 25) * 100} 
+              className="w-32 h-2"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-center mb-2 text-muted-foreground">Ваше поле</p>
             {renderBoard(false)}
+            <p className="text-xs text-center mt-1 text-muted-foreground">
+              Попадания показывают часть корабля (1/3 = первая часть из 3)
+            </p>
           </div>
           <div>
             <p className="text-sm text-center mb-2 text-muted-foreground">Поле противника</p>
