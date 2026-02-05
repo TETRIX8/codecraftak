@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Pencil, Upload, Crown, Loader2 } from 'lucide-react';
+import { Check, Pencil, Upload, Crown, Loader2, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateProfile, Profile, useLeaderboard } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useRoles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const NICKNAME_CHANGE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const AVATAR_OPTIONS = [
   // Avataaars style
@@ -86,10 +89,25 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const updateProfile = useUpdateProfile();
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { data: leaderboard } = useLeaderboard();
 
   // Check if user is in top 3 of leaderboard
   const isLeader = leaderboard?.slice(0, 3).some(leader => leader.id === user?.id) ?? false;
+
+  // Check nickname change cooldown
+  const lastNicknameChange = (profile as any).last_nickname_change 
+    ? new Date((profile as any).last_nickname_change).getTime() 
+    : null;
+  const cooldownRemaining = lastNicknameChange 
+    ? Math.max(0, NICKNAME_CHANGE_COOLDOWN_MS - (Date.now() - lastNicknameChange))
+    : 0;
+  const canChangeNickname = isAdmin || cooldownRemaining === 0;
+  
+  const formatCooldown = (ms: number) => {
+    const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+    return `${days} дн.`;
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -137,11 +155,25 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
       return;
     }
 
+    // Check if nickname changed and cooldown applies
+    const nicknameChanged = nickname.trim() !== profile.nickname;
+    if (nicknameChanged && !canChangeNickname) {
+      toast.error(`Смена ника доступна через ${formatCooldown(cooldownRemaining)}`);
+      return;
+    }
+
     try {
-      await updateProfile.mutateAsync({
-        nickname: nickname.trim(),
+      const updates: Record<string, any> = {
         avatar_url: selectedAvatar,
-      });
+      };
+
+      // Only update nickname if changed and allowed
+      if (nicknameChanged && canChangeNickname) {
+        updates.nickname = nickname.trim();
+        updates.last_nickname_change = new Date().toISOString();
+      }
+
+      await updateProfile.mutateAsync(updates);
       toast.success('Профиль обновлён');
       setOpen(false);
     } catch (error) {
@@ -165,14 +197,31 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
         <div className="space-y-6 py-4">
           {/* Nickname */}
           <div className="space-y-2">
-            <Label htmlFor="nickname">Никнейм</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="nickname">Никнейм</Label>
+              {!canChangeNickname && (
+                <div className="flex items-center gap-1 text-xs text-warning">
+                  <Clock className="w-3 h-3" />
+                  <span>Смена через {formatCooldown(cooldownRemaining)}</span>
+                </div>
+              )}
+              {isAdmin && (
+                <span className="text-xs text-primary">Админ</span>
+              )}
+            </div>
             <Input
               id="nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder="Введите никнейм"
               maxLength={20}
+              disabled={!canChangeNickname && nickname !== profile.nickname}
             />
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground">
+                Можно менять раз в неделю
+              </p>
+            )}
           </div>
 
           {/* Avatar Selection */}

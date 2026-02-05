@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { UserSelector } from '@/components/games/UserSelector';
 import { GameInviteCard } from '@/components/games/GameInviteCard';
+import { GameActionConfirmDialog } from '@/components/games/GameActionConfirmDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Gamepad2, 
@@ -28,7 +29,8 @@ import {
   Ship,
   Target,
   Skull,
-  FileText
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
@@ -46,10 +48,12 @@ export default function Games() {
     fetchCurrentGame,
     setGame,
     getCooldownRemaining,
+    checkDailyLimit,
     GAME_NAMES, 
     MIN_BET,
     MAX_BET,
-    GAME_COOLDOWN_MS
+    GAME_COOLDOWN_MS,
+    DAILY_GAME_LIMIT
   } = useGames();
   
   const { 
@@ -64,17 +68,27 @@ export default function Games() {
   const [sentInvites, setSentInvites] = useState<string[]>([]);
   const [selectedBet, setSelectedBet] = useState(1);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [dailyGamesRemaining, setDailyGamesRemaining] = useState(DAILY_GAME_LIMIT);
   
-  // Update cooldown timer
+  // Update cooldown timer and daily limit
   useEffect(() => {
     const updateCooldown = () => {
       setCooldownRemaining(getCooldownRemaining());
     };
     
+    const updateDailyLimit = async () => {
+      const { remaining } = await checkDailyLimit();
+      setDailyGamesRemaining(remaining);
+    };
+    
     updateCooldown();
-    const interval = setInterval(updateCooldown, 1000);
+    updateDailyLimit();
+    const interval = setInterval(() => {
+      updateCooldown();
+      updateDailyLimit();
+    }, 5000);
     return () => clearInterval(interval);
-  }, [getCooldownRemaining]);
+  }, [getCooldownRemaining, checkDailyLimit]);
   
   // When currentGame becomes active (status === 'playing'), reset createdGameId
   useEffect(() => {
@@ -247,9 +261,12 @@ export default function Games() {
               Играйте с другими участниками за баллы
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-1">
             <div className="text-2xl font-bold text-primary">{balance}</div>
             <div className="text-sm text-muted-foreground">баллов</div>
+            <div className={`text-xs font-medium ${dailyGamesRemaining <= 1 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              Осталось игр сегодня: {dailyGamesRemaining}/{DAILY_GAME_LIMIT}
+            </div>
           </div>
         </div>
 
@@ -266,6 +283,8 @@ export default function Games() {
             <p>• Победитель получает: <span className="font-bold text-success">ставку × 2</span></p>
             <p>• При ничьей баллы возвращаются обоим игрокам</p>
             <p>• Между созданиями игр: <span className="font-bold text-foreground">5 мин задержка</span></p>
+            <p>• Дневной лимит: <span className="font-bold text-warning">5 игр в день</span></p>
+            <p>• Все действия требуют подтверждения (защита от ошибок)</p>
           </CardContent>
         </Card>
 
@@ -279,6 +298,19 @@ export default function Games() {
                 <span className="font-bold text-warning">
                   {Math.floor(cooldownRemaining / 60000)}:{String(Math.floor((cooldownRemaining % 60000) / 1000)).padStart(2, '0')}
                 </span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Daily limit warning */}
+        {dailyGamesRemaining <= 0 && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="py-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                <span className="font-bold text-destructive">Дневной лимит игр исчерпан.</span>{' '}
+                Приходите завтра!
               </p>
             </CardContent>
           </Card>
@@ -667,9 +699,24 @@ function TicTacToeBoard({
   isMyTurn: boolean;
   onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingPosition, setPendingPosition] = useState<number | null>(null);
+  
   const gameState = game.game_state as { board: (string | null)[]; symbols: Record<string, string> };
   const board = gameState.board || Array(9).fill(null);
   const mySymbol = gameState.symbols?.[userId] || 'X';
+
+  const handleCellClick = (index: number) => {
+    if (board[index] !== null || !isMyTurn) return;
+    setPendingPosition(index);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmMove = async () => {
+    if (pendingPosition === null) return;
+    await onMove(game.id, { position: pendingPosition });
+    setPendingPosition(null);
+  };
 
   return (
     <Card>
@@ -685,7 +732,7 @@ function TicTacToeBoard({
               key={index}
               whileHover={cell === null && isMyTurn ? { scale: 1.05 } : {}}
               whileTap={cell === null && isMyTurn ? { scale: 0.95 } : {}}
-              onClick={() => cell === null && isMyTurn && onMove(game.id, { position: index })}
+              onClick={() => handleCellClick(index)}
               disabled={cell !== null || !isMyTurn}
               className={`
                 aspect-square rounded-lg text-4xl font-bold
@@ -703,6 +750,16 @@ function TicTacToeBoard({
             </motion.button>
           ))}
         </div>
+
+        <GameActionConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Подтвердите ход"
+          description={`Вы уверены, что хотите поставить ${mySymbol} в эту клетку?`}
+          confirmText="Сделать ход"
+          onConfirm={handleConfirmMove}
+          delay={1}
+        />
       </CardContent>
     </Card>
   );
@@ -717,6 +774,9 @@ function RPSBoard({
   userId: string;
   onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingChoice, setPendingChoice] = useState<string | null>(null);
+  
   const gameState = game.game_state as { choices: Record<string, string> };
   const myChoice = gameState.choices?.[userId];
   const hasChosen = !!myChoice;
@@ -726,6 +786,19 @@ function RPSBoard({
     { id: 'scissors', label: 'Ножницы', icon: Scissors },
     { id: 'paper', label: 'Бумага', icon: FileText }
   ];
+
+  const handleChoiceClick = (choiceId: string) => {
+    setPendingChoice(choiceId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmChoice = async () => {
+    if (!pendingChoice) return;
+    await onMove(game.id, { choice: pendingChoice });
+    setPendingChoice(null);
+  };
+
+  const pendingChoiceLabel = choices.find(c => c.id === pendingChoice)?.label || '';
 
   return (
     <Card>
@@ -745,7 +818,7 @@ function RPSBoard({
                   key={choice.id}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => onMove(game.id, { choice: choice.id })}
+                  onClick={() => handleChoiceClick(choice.id)}
                   className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted hover:bg-primary/20 transition-colors"
                 >
                   <choice.icon className="h-12 w-12" />
@@ -755,6 +828,16 @@ function RPSBoard({
             </div>
           </div>
         )}
+
+        <GameActionConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Подтвердите выбор"
+          description={`Вы уверены, что хотите выбрать "${pendingChoiceLabel}"? Это действие нельзя отменить.`}
+          confirmText="Подтвердить"
+          onConfirm={handleConfirmChoice}
+          delay={1}
+        />
       </CardContent>
     </Card>
   );
@@ -774,6 +857,8 @@ function BattleshipBoard({
   const [isHorizontal, setIsHorizontal] = useState(true);
   const [timeLeft, setTimeLeft] = useState(25);
   const [lastTurnChange, setLastTurnChange] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingShot, setPendingShot] = useState<number | null>(null);
   
   const gameState = game.game_state as { 
     boards: Record<string, unknown[]>;
@@ -879,8 +964,15 @@ function BattleshipBoard({
     } else if (phase === 'battle' && isMyTurn) {
       // Shooting phase
       if (myShots.includes(index)) return; // Already shot here
-      onMove(game.id, { position: index });
+      setPendingShot(index);
+      setConfirmOpen(true);
     }
+  };
+
+  const handleConfirmShot = async () => {
+    if (pendingShot === null) return;
+    await onMove(game.id, { position: pendingShot });
+    setPendingShot(null);
   };
 
   const renderBoard = (isOpponentBoard: boolean) => {
@@ -1049,6 +1141,16 @@ function BattleshipBoard({
             {renderBoard(true)}
           </div>
         </div>
+
+        <GameActionConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Подтвердите выстрел"
+          description={`Вы уверены, что хотите выстрелить в клетку ${pendingShot !== null ? `${String.fromCharCode(65 + (pendingShot % 10))}${Math.floor(pendingShot / 10) + 1}` : ''}?`}
+          confirmText="Выстрелить"
+          onConfirm={handleConfirmShot}
+          delay={1}
+        />
       </CardContent>
     </Card>
   );
@@ -1064,6 +1166,7 @@ function RussianRouletteBoard({
   onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
 }) {
   const [isSpinning, setIsSpinning] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   
   const gameState = game.game_state as { 
     chamber: number;
@@ -1079,7 +1182,11 @@ function RussianRouletteBoard({
   const isMyTurn = game.current_turn === userId;
   const remainingChambers = 6 - chamber;
 
-  const handlePull = async () => {
+  const handlePullClick = () => {
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmPull = async () => {
     setIsSpinning(true);
     await new Promise(resolve => setTimeout(resolve, 1000)); // Dramatic pause
     await onMove(game.id, { pull: true });
@@ -1111,7 +1218,7 @@ function RussianRouletteBoard({
                 </div>
               </div>
             </motion.div>
-            <Target className="absolute -top-2 -right-2 h-8 w-8 text-red-500" />
+            <Target className="absolute -top-2 -right-2 h-8 w-8 text-destructive" />
           </div>
           
           <p className="text-2xl font-bold">
@@ -1144,11 +1251,11 @@ function RussianRouletteBoard({
               animate={{ scale: 1 }}
               className="space-y-4"
             >
-              <p className="text-lg font-medium text-yellow-500">Ваш ход!</p>
+              <p className="text-lg font-medium text-warning">Ваш ход!</p>
               <Button 
                 size="lg" 
                 variant="destructive"
-                onClick={handlePull}
+                onClick={handlePullClick}
                 disabled={isSpinning}
                 className="gap-2"
               >
@@ -1167,6 +1274,17 @@ function RussianRouletteBoard({
             </div>
           )}
         </div>
+
+        <GameActionConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Русская рулетка"
+          description={`Вы уверены, что хотите нажать на курок? Шанс выстрела: ${Math.round((1 / remainingChambers) * 100)}%`}
+          confirmText="Нажать на курок"
+          onConfirm={handleConfirmPull}
+          delay={2}
+          variant="destructive"
+        />
       </CardContent>
     </Card>
   );

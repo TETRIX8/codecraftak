@@ -362,6 +362,50 @@ export type Database = {
           },
         ]
       }
+      point_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_likes: {
         Row: {
           created_at: string
@@ -403,9 +447,12 @@ export type Database = {
           avatar_url: string | null
           correct_reviews: number | null
           created_at: string | null
+          daily_games_count: number | null
           daily_reviews_count: number | null
           id: string
           last_activity_date: string | null
+          last_game_date: string | null
+          last_nickname_change: string | null
           last_review_date: string | null
           level: Database["public"]["Enums"]["user_level"] | null
           likes_received: number | null
@@ -421,9 +468,12 @@ export type Database = {
           avatar_url?: string | null
           correct_reviews?: number | null
           created_at?: string | null
+          daily_games_count?: number | null
           daily_reviews_count?: number | null
           id: string
           last_activity_date?: string | null
+          last_game_date?: string | null
+          last_nickname_change?: string | null
           last_review_date?: string | null
           level?: Database["public"]["Enums"]["user_level"] | null
           likes_received?: number | null
@@ -439,9 +489,12 @@ export type Database = {
           avatar_url?: string | null
           correct_reviews?: number | null
           created_at?: string | null
+          daily_games_count?: number | null
           daily_reviews_count?: number | null
           id?: string
           last_activity_date?: string | null
+          last_game_date?: string | null
+          last_nickname_change?: string | null
           last_review_date?: string | null
           level?: Database["public"]["Enums"]["user_level"] | null
           likes_received?: number | null
@@ -696,6 +749,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_game_winner: {
+        Args: { _game_id: string; _win_amount: number; _winner_id: string }
+        Returns: undefined
+      }
       calculate_trust_rating: {
         Args: {
           _correct_reviews: number
@@ -703,6 +760,10 @@ export type Database = {
           _total_reviews: number
         }
         Returns: number
+      }
+      deduct_game_bet: {
+        Args: { _bet_amount: number; _game_id: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -716,6 +777,20 @@ export type Database = {
         Returns: boolean
       }
       is_global_chat: { Args: { _chat_id: string }; Returns: boolean }
+      log_point_transaction: {
+        Args: {
+          _amount: number
+          _description?: string
+          _reference_id?: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      refund_game_bet: {
+        Args: { _bet_amount: number; _game_id: string; _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
