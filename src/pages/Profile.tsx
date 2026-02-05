@@ -28,6 +28,7 @@ import { Progress } from '@/components/ui/progress';
 import { LevelBadge } from '@/components/common/Badges';
 import { SolutionCard } from '@/components/solutions/SolutionCard';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
+import { ChangePasswordDialog } from '@/components/profile/ChangePasswordDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserBadges, useBadges } from '@/hooks/useBadges';
@@ -619,6 +620,7 @@ export default function Profile() {
                   </h1>
                   <LevelBadge level={profile.level} />
                   <EditProfileDialog profile={profile} />
+                  <ChangePasswordDialog />
                 </div>
                 
                 <p className="text-muted-foreground mb-4 flex items-center justify-center sm:justify-start gap-2">

@@ -50,6 +50,7 @@ const GAME_NAMES: Record<GameType, string> = {
 const MIN_BET = 1;
 const MAX_BET = 5;
 const GAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const DAILY_GAME_LIMIT = 5;
 
 function parseGameRow(row: GameRow): Game {
   return {
@@ -69,6 +70,7 @@ export function useGames() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastGameCreatedAt, setLastGameCreatedAt] = useState<number | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: string; data: any } | null>(null);
   
   // Load last game creation time from localStorage
   useEffect(() => {
@@ -203,6 +205,28 @@ export function useGames() {
     return Math.max(0, GAME_COOLDOWN_MS - elapsed);
   }
 
+  // Check daily game limit
+  async function checkDailyLimit(): Promise<{ canPlay: boolean; remaining: number }> {
+    if (!user?.id) return { canPlay: false, remaining: 0 };
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('daily_games_count, last_game_date')
+      .eq('id', user.id)
+      .single();
+    
+    if (!profile) return { canPlay: false, remaining: 0 };
+    
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = profile.last_game_date;
+    
+    // Reset count if it's a new day
+    const count = lastDate === today ? (profile.daily_games_count || 0) : 0;
+    const remaining = DAILY_GAME_LIMIT - count;
+    
+    return { canPlay: remaining > 0, remaining };
+  }
+
   async function createGame(gameType: GameType, currentBalance: number, betAmount: number = 1): Promise<string | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
@@ -217,6 +241,13 @@ export function useGames() {
       return null;
     }
 
+    // Check daily limit
+    const { canPlay, remaining } = await checkDailyLimit();
+    if (!canPlay) {
+      toast.error('Достигнут дневной лимит игр (5 игр в день)');
+      return null;
+    }
+
     // Validate bet
     const validBet = Math.min(MAX_BET, Math.max(MIN_BET, betAmount));
     
@@ -228,13 +259,20 @@ export function useGames() {
     setIsLoading(true);
 
     try {
-      // Deduct bet
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ review_balance: currentBalance - validBet })
-        .eq('id', user.id);
+      // Generate game ID first
+      const gameId = crypto.randomUUID();
+      
+      // Use database function to deduct bet atomically
+      const { data: canDeduct, error: deductError } = await supabase.rpc('deduct_game_bet', {
+        _user_id: user.id,
+        _bet_amount: validBet,
+        _game_id: gameId
+      });
 
-      if (updateError) throw updateError;
+      if (deductError || !canDeduct) {
+        toast.error('Не удалось списать ставку. Проверьте баланс и дневной лимит.');
+        return null;
+      }
 
       // Create game with initial state
       let initialState: Json = {};
@@ -266,6 +304,7 @@ export function useGames() {
       const { data, error } = await supabase
         .from('games')
         .insert({
+          id: gameId,
           game_type: gameType,
           creator_id: user.id,
           current_turn: user.id,
@@ -283,7 +322,7 @@ export function useGames() {
       localStorage.setItem(`lastGameCreated_${user.id}`, now.toString());
 
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      toast.success(`Игра "${GAME_NAMES[gameType]}" создана! Ставка: ${validBet} баллов`);
+      toast.success(`Игра "${GAME_NAMES[gameType]}" создана! Ставка: ${validBet} баллов. Осталось игр сегодня: ${remaining - 1}`);
       
       // Don't set currentGame here - we want user to invite someone first
       return data.id;
@@ -299,6 +338,13 @@ export function useGames() {
   async function joinGame(gameId: string, currentBalance: number, gameBetAmount: number = 1): Promise<Game | null> {
     if (!user?.id) {
       toast.error('Необходимо войти в аккаунт');
+      return null;
+    }
+
+    // Check daily limit for joining player too
+    const { canPlay, remaining } = await checkDailyLimit();
+    if (!canPlay) {
+      toast.error('Достигнут дневной лимит игр (5 игр в день)');
       return null;
     }
 
@@ -337,13 +383,17 @@ export function useGames() {
         return null;
       }
 
-      // Deduct bet (use game's bet_amount)
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ review_balance: currentBalance - game.bet_amount })
-        .eq('id', user.id);
+      // Use database function to deduct bet atomically
+      const { data: canDeduct, error: deductError } = await supabase.rpc('deduct_game_bet', {
+        _user_id: user.id,
+        _bet_amount: game.bet_amount,
+        _game_id: gameId
+      });
 
-      if (updateError) throw updateError;
+      if (deductError || !canDeduct) {
+        toast.error('Не удалось списать ставку. Проверьте баланс и дневной лимит.');
+        return null;
+      }
 
       // Update game state with opponent
       const gameState = (game.game_state as Record<string, Json>) || {};
@@ -553,10 +603,10 @@ export function useGames() {
 
       // If game finished, award winner
       if (status === 'finished' && winnerId) {
-        await awardWinner(winnerId);
+        await awardWinner(winnerId, gameId);
       } else if (status === 'finished' && !winnerId && game.opponent_id) {
         // Draw - return bets
-        await returnBets(game.creator_id, game.opponent_id, game.bet_amount);
+        await returnBets(game.creator_id, game.opponent_id, game.bet_amount, gameId);
       }
 
       await fetchCurrentGame(gameId);
@@ -568,40 +618,36 @@ export function useGames() {
     }
   }
 
-  async function awardWinner(winnerId: string) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('review_balance')
-      .eq('id', winnerId)
-      .single();
+  async function awardWinner(winnerId: string, gameId: string) {
+    // Use database function for atomic award
+    const winReward = currentGame?.bet_amount ? currentGame.bet_amount * 2 : 2;
+    
+    const { error } = await supabase.rpc('award_game_winner', {
+      _winner_id: winnerId,
+      _game_id: gameId,
+      _win_amount: winReward
+    });
 
-    if (profile) {
-      // Winner gets double the bet amount (both bets go to winner)
-      const winReward = currentGame?.bet_amount ? currentGame.bet_amount * 2 : 2;
-      await supabase
-        .from('profiles')
-        .update({ review_balance: (profile.review_balance || 0) + winReward })
-        .eq('id', winnerId);
+    if (error) {
+      console.error('Error awarding winner:', error);
     }
 
     queryClient.invalidateQueries({ queryKey: ['profile'] });
   }
 
-  async function returnBets(creatorId: string, opponentId: string, betAmount: number) {
-    // Return bets to both players
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, review_balance')
-      .in('id', [creatorId, opponentId]);
-
-    if (profiles) {
-      for (const profile of profiles) {
-        await supabase
-          .from('profiles')
-          .update({ review_balance: (profile.review_balance || 0) + betAmount })
-          .eq('id', profile.id);
-      }
-    }
+  async function returnBets(creatorId: string, opponentId: string, betAmount: number, gameId: string) {
+    // Use database functions for atomic refunds
+    await supabase.rpc('refund_game_bet', {
+      _user_id: creatorId,
+      _game_id: gameId,
+      _bet_amount: betAmount
+    });
+    
+    await supabase.rpc('refund_game_bet', {
+      _user_id: opponentId,
+      _game_id: gameId,
+      _bet_amount: betAmount
+    });
 
     queryClient.invalidateQueries({ queryKey: ['profile'] });
   }
@@ -663,10 +709,12 @@ export function useGames() {
     fetchCurrentGame,
     setGame,
     getCooldownRemaining,
+    checkDailyLimit,
     GAME_NAMES,
     MIN_BET,
     MAX_BET,
-    GAME_COOLDOWN_MS
+    GAME_COOLDOWN_MS,
+    DAILY_GAME_LIMIT
   };
 }
 
