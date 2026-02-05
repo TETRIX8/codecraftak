@@ -101,12 +101,6 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Максимальный размер файла 2MB');
-      return;
-    }
-
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
