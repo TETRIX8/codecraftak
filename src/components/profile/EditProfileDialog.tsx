@@ -94,6 +94,12 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
 
   // Check if user is in top 3 of leaderboard
   const isLeader = leaderboard?.slice(0, 3).some(leader => leader.id === user?.id) ?? false;
+  
+  // Check if user has admin-granted avatar permission
+  const hasAvatarPermission = (profile as any).can_upload_avatar ?? false;
+  
+  // Can upload custom avatar if: admin, top 3 leader, or has permission
+  const canUploadCustomAvatar = isAdmin || isLeader || hasAvatarPermission;
 
   // Check nickname change cooldown
   const lastNicknameChange = (profile as any).last_nickname_change 
@@ -228,16 +234,16 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>Выберите аватар</Label>
-              {isLeader && (
+              {canUploadCustomAvatar && (
                 <div className="flex items-center gap-2 text-xs text-accent">
                   <Crown className="w-4 h-4" />
-                  <span>Топ-3 рейтинга</span>
+                  <span>{isLeader ? 'Топ-3 рейтинга' : hasAvatarPermission ? 'Разрешено' : 'Админ'}</span>
                 </div>
               )}
             </div>
 
-            {/* Custom avatar upload for leaders */}
-            {isLeader && (
+            {/* Custom avatar upload for authorized users */}
+            {canUploadCustomAvatar && (
               <div className="mb-4">
                 <input
                   ref={fileInputRef}
@@ -266,7 +272,8 @@ export function EditProfileDialog({ profile }: EditProfileDialogProps) {
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-1 text-center">
-                  Привилегия для топ-3 лидеров рейтинга
+                  {isLeader ? 'Привилегия для топ-3 лидеров рейтинга' : 
+                   hasAvatarPermission ? 'Разрешено администратором' : 'Привилегия администратора'}
                 </p>
               </div>
             )}

@@ -445,6 +445,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          can_upload_avatar: boolean | null
           correct_reviews: number | null
           created_at: string | null
           daily_games_count: number | null
@@ -466,6 +467,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          can_upload_avatar?: boolean | null
           correct_reviews?: number | null
           created_at?: string | null
           daily_games_count?: number | null
@@ -487,6 +489,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          can_upload_avatar?: boolean | null
           correct_reviews?: number | null
           created_at?: string | null
           daily_games_count?: number | null
