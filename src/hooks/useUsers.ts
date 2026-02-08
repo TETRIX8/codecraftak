@@ -85,7 +85,7 @@ export function useUsers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar_url, trust_rating, reviews_completed, level, likes_received, created_at, correct_reviews, total_reviews, review_balance')
+        .select('id, nickname, avatar_url, trust_rating, reviews_completed, level, likes_received, created_at, correct_reviews, total_reviews, review_balance, can_upload_avatar')
         .order('created_at', { ascending: false })
         .limit(100);
 

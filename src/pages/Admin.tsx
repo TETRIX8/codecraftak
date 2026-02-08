@@ -19,6 +19,7 @@ import { AdminTopics } from '@/components/admin/AdminTopics';
 import { AdminUserRatings } from '@/components/admin/AdminUserRatings';
 import { AdminSolutions } from '@/components/admin/AdminSolutions';
 import { AdminAppeals } from '@/components/admin/AdminAppeals';
+import { AdminAvatarPermissions } from '@/components/admin/AdminAvatarPermissions';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -187,6 +188,11 @@ export default function Admin() {
         {/* User Ratings Section */}
         <div className="mb-8">
           <AdminUserRatings />
+        </div>
+
+        {/* Avatar Permissions Section */}
+        <div className="mb-8">
+          <AdminAvatarPermissions />
         </div>
 
         {/* Solutions Management Section */}
