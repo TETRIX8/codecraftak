@@ -1,12 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Skull } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Skull, Shield, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { useIsAdmin } from '@/hooks/useRoles';
+import { useIsAdmin, useIsAnticheat, useIsStarosta } from '@/hooks/useRoles';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
@@ -29,6 +29,8 @@ export function Navbar() {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { isAdmin } = useIsAdmin();
+  const { isAnticheat } = useIsAnticheat();
+  const { isStarosta } = useIsStarosta();
 
   const handleSignOut = async () => {
     await signOut();
@@ -92,6 +94,22 @@ export function Navbar() {
                     <Button variant="outline" size="sm">
                       <Settings className="w-4 h-4 mr-2" />
                       Админ
+                    </Button>
+                  </Link>
+                )}
+                {isAnticheat && !isAdmin && (
+                  <Link to="/anticheat">
+                    <Button variant="outline" size="sm">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Античит
+                    </Button>
+                  </Link>
+                )}
+                {isStarosta && !isAdmin && (
+                  <Link to="/starosta">
+                    <Button variant="outline" size="sm">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Староста
                     </Button>
                   </Link>
                 )}
@@ -171,6 +189,22 @@ export function Navbar() {
                         <Button variant="outline" className="w-full mb-2">
                           <Settings className="w-4 h-4 mr-2" />
                           Админ-панель
+                        </Button>
+                      </Link>
+                    )}
+                    {isAnticheat && !isAdmin && (
+                      <Link to="/anticheat" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          <Shield className="w-4 h-4 mr-2" />
+                          Античит-панель
+                        </Button>
+                      </Link>
+                    )}
+                    {isStarosta && !isAdmin && (
+                      <Link to="/starosta" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Староста-панель
                         </Button>
                       </Link>
                     )}
