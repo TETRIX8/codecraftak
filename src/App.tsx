@@ -20,6 +20,8 @@ import Topics from "./pages/Topics";
 import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import Cheaters from "./pages/Cheaters";
+import AnticheatPanel from "./pages/AnticheatPanel";
+import StarostaPanel from "./pages/StarostaPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="/topics/:id" element={<TopicDetail />} />
               <Route path="/games" element={<Games />} />
               <Route path="/cheaters" element={<Cheaters />} />
+              <Route path="/anticheat" element={<AnticheatPanel />} />
+              <Route path="/starosta" element={<StarostaPanel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
