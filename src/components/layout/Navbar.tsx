@@ -1,12 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Skull, Shield, Calendar } from 'lucide-react';
+import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Skull, Shield, Calendar, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { useIsAdmin, useIsAnticheat, useIsStarosta } from '@/hooks/useRoles';
+import { useIsAdmin, useIsAnticheat, useIsStarosta, useIsModerator } from '@/hooks/useRoles';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
@@ -31,6 +31,7 @@ export function Navbar() {
   const { isAdmin } = useIsAdmin();
   const { isAnticheat } = useIsAnticheat();
   const { isStarosta } = useIsStarosta();
+  const { isModerator } = useIsModerator();
 
   const handleSignOut = async () => {
     await signOut();
@@ -102,6 +103,14 @@ export function Navbar() {
                     <Button variant="outline" size="sm">
                       <Shield className="w-4 h-4 mr-2" />
                       Античит
+                    </Button>
+                  </Link>
+                )}
+                {isModerator && !isAdmin && (
+                  <Link to="/moderator">
+                    <Button variant="outline" size="sm">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Модератор
                     </Button>
                   </Link>
                 )}
@@ -197,6 +206,14 @@ export function Navbar() {
                         <Button variant="outline" className="w-full mb-2">
                           <Shield className="w-4 h-4 mr-2" />
                           Античит-панель
+                        </Button>
+                      </Link>
+                    )}
+                    {isModerator && !isAdmin && (
+                      <Link to="/moderator" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          <Eye className="w-4 h-4 mr-2" />
+                          Модератор-панель
                         </Button>
                       </Link>
                     )}

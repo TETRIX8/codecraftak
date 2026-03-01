@@ -22,6 +22,7 @@ import Games from "./pages/Games";
 import Cheaters from "./pages/Cheaters";
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
+import ModeratorPanel from "./pages/ModeratorPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/cheaters" element={<Cheaters />} />
               <Route path="/anticheat" element={<AnticheatPanel />} />
               <Route path="/starosta" element={<StarostaPanel />} />
+              <Route path="/moderator" element={<ModeratorPanel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
