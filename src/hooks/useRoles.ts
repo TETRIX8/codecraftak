@@ -40,6 +40,14 @@ export function useIsAnticheat() {
   };
 }
 
+export function useIsModerator() {
+  const { data: roles, isLoading } = useUserRoles();
+  return {
+    isModerator: (roles?.includes('moderator') || roles?.includes('admin')) ?? false,
+    isLoading,
+  };
+}
+
 export function useIsStarosta() {
   const { data: roles, isLoading } = useUserRoles();
   return {
