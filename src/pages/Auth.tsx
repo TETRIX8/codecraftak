@@ -56,7 +56,7 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
-          toast.success('Регистрация успешна! Добро пожаловать!');
+          toast.success('Регистрация отправлена! Ожидайте одобрения администратора.');
           navigate('/');
         }
       }

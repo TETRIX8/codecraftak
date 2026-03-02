@@ -2,6 +2,7 @@ import { Navbar } from './Navbar';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { WelcomePopup } from '@/components/common/WelcomePopup';
 import { BanScreen } from '@/components/common/BanScreen';
+import { PendingApprovalScreen } from '@/components/common/PendingApprovalScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +35,22 @@ export function Layout({ children }: LayoutProps) {
     refetchInterval: 60000,
   });
 
-  if (user && banLoading) {
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['user-approval-check', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_approved')
+        .eq('id', user!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
+  if (user && (banLoading || profileLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -44,6 +60,10 @@ export function Layout({ children }: LayoutProps) {
 
   if (activeBan) {
     return <BanScreen reason={activeBan.reason} expiresAt={activeBan.expires_at} />;
+  }
+
+  if (user && profile && !profile.is_approved) {
+    return <PendingApprovalScreen />;
   }
 
   return (
