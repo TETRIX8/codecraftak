@@ -33,7 +33,7 @@ export function AdminSolutions() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSolution, setSelectedSolution] = useState<SolutionWithDetails | null>(null);
-  const [filter, setFilter] = useState<'all' | 'rejected' | 'pending'>('rejected');
+  const [filter, setFilter] = useState<'all' | 'rejected' | 'pending' | 'accepted'>('rejected');
 
   const { data: solutions, isLoading } = useQuery({
     queryKey: ['admin-solutions', filter],
@@ -225,6 +225,14 @@ export function AdminSolutions() {
             onClick={() => setFilter('pending')}
           >
             На проверке
+          </Button>
+          <Button
+            variant={filter === 'accepted' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('accepted')}
+          >
+            <CheckCircle2 className="w-4 h-4 mr-1" />
+            Принятые
           </Button>
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
