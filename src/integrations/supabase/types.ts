@@ -505,6 +505,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           id: string
+          is_approved: boolean | null
           is_deleted: boolean | null
           last_activity_date: string | null
           last_game_date: string | null
@@ -530,6 +531,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id: string
+          is_approved?: boolean | null
           is_deleted?: boolean | null
           last_activity_date?: string | null
           last_game_date?: string | null
@@ -555,6 +557,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
+          is_approved?: boolean | null
           is_deleted?: boolean | null
           last_activity_date?: string | null
           last_game_date?: string | null
