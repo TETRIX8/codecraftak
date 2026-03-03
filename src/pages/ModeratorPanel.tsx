@@ -423,6 +423,11 @@ export default function ModeratorPanel() {
             </Card>
           </TabsContent>
 
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="space-y-4">
+            <ModeratorTasks />
+          </TabsContent>
+
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-4">
             <Card className="border-fuchsia-500/20">
