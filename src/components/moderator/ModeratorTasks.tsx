@@ -41,7 +41,7 @@ export function ModeratorTasks() {
         .limit(100);
 
       if (statusFilter !== 'all') {
-        q = q.eq('status', statusFilter);
+        q = q.eq('status', statusFilter as 'pending' | 'accepted' | 'rejected');
       }
 
       const { data, error } = await q;

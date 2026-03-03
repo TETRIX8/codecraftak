@@ -685,6 +685,10 @@ export default function ModeratorPanel() {
               </CardContent>
             </Card>
           </TabsContent>
+          {/* CMS Tab */}
+          <TabsContent value="cms" className="space-y-4">
+            <ModeratorCMS />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
