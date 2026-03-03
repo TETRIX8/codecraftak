@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Ban, UserX, UserCheck, Loader2, ArrowLeft, Search, Clock,
   CheckCircle2, XCircle, FileCode2, Users, Activity, KeyRound, Edit3,
-  AlertTriangle, Shield, ChevronDown, ChevronUp
+  AlertTriangle, Shield, ChevronDown, ChevronUp, BookOpen, Palette
 } from 'lucide-react';
+import { ModeratorTasks } from '@/components/moderator/ModeratorTasks';
+import { ModeratorCMS } from '@/components/moderator/ModeratorCMS';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
