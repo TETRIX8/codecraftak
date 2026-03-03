@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Ban, UserX, UserCheck, Loader2, ArrowLeft, Search, Clock,
   CheckCircle2, XCircle, FileCode2, Users, Activity, KeyRound, Edit3,
-  AlertTriangle, Shield, ChevronDown, ChevronUp
+  AlertTriangle, Shield, ChevronDown, ChevronUp, BookOpen, Palette
 } from 'lucide-react';
+import { ModeratorTasks } from '@/components/moderator/ModeratorTasks';
+import { ModeratorCMS } from '@/components/moderator/ModeratorCMS';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -292,10 +294,14 @@ export default function ModeratorPanel() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-6 h-auto p-1">
             <TabsTrigger value="solutions" className="flex items-center gap-2 py-3">
               <FileCode2 className="w-4 h-4" />
               <span className="hidden sm:inline">Решения</span>
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="flex items-center gap-2 py-3">
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">Задания</span>
             </TabsTrigger>
             <TabsTrigger value="activity" className="flex items-center gap-2 py-3">
               <Activity className="w-4 h-4" />
@@ -308,6 +314,10 @@ export default function ModeratorPanel() {
             <TabsTrigger value="bans" className="flex items-center gap-2 py-3">
               <Ban className="w-4 h-4" />
               <span className="hidden sm:inline">Баны</span>
+            </TabsTrigger>
+            <TabsTrigger value="cms" className="flex items-center gap-2 py-3">
+              <Palette className="w-4 h-4" />
+              <span className="hidden sm:inline">Контент</span>
             </TabsTrigger>
           </TabsList>
 
@@ -411,6 +421,11 @@ export default function ModeratorPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="space-y-4">
+            <ModeratorTasks />
           </TabsContent>
 
           {/* Activity Tab */}
@@ -669,6 +684,10 @@ export default function ModeratorPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          {/* CMS Tab */}
+          <TabsContent value="cms" className="space-y-4">
+            <ModeratorCMS />
           </TabsContent>
         </Tabs>
       </div>
