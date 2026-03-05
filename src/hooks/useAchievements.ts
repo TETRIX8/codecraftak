@@ -22,7 +22,7 @@ export function useCheckAndAwardBadges() {
       const newBadges = data?.filter((b: any) => b.newly_awarded) || [];
       if (newBadges.length > 0) {
         newBadges.forEach((b: any) => {
-          toast.success(`${b.badge_icon} Новое достижение: ${b.badge_name}!`);
+          toast.success(`${b.badge_icon} Новое достижение: ${b.badge_name}! +${b.points_awarded} баллов`);
         });
       }
       queryClient.invalidateQueries({ queryKey: ['user-badges'] });

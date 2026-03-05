@@ -9,6 +9,7 @@ export interface Badge {
   icon: string;
   requirement_type: string;
   requirement_value: number;
+  reward_points: number;
 }
 
 export interface UserBadge {
