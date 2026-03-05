@@ -16,7 +16,7 @@ export function useCheckAndAwardBadges() {
       });
 
       if (error) throw error;
-      return data as { badge_name: string; badge_icon: string; newly_awarded: boolean }[];
+      return data as { badge_name: string; badge_icon: string; newly_awarded: boolean; points_awarded: number }[];
     },
     onSuccess: (data) => {
       const newBadges = data?.filter(b => b.newly_awarded) || [];
