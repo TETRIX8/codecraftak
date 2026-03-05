@@ -23,6 +23,7 @@ import Cheaters from "./pages/Cheaters";
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
 import ModeratorPanel from "./pages/ModeratorPanel";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
