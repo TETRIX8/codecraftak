@@ -221,7 +221,13 @@ export default function Achievements() {
               <TrendingUp className="w-5 h-5 text-primary" />
               <span className="font-semibold">Общий прогресс</span>
             </div>
-            <span className="text-2xl font-bold">{earnedCount} / {totalCount}</span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm flex items-center gap-1 text-amber-400 font-bold">
+                <Trophy className="w-4 h-4" />
+                {earnedPoints} / {totalPoints} баллов
+              </span>
+              <span className="text-2xl font-bold">{earnedCount} / {totalCount}</span>
+            </div>
           </div>
           <div className="h-4 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
