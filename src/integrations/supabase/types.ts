@@ -1009,6 +1009,7 @@ export type Database = {
           badge_icon: string
           badge_name: string
           newly_awarded: boolean
+          points_awarded: number
         }[]
       }
       deduct_game_bet: {
