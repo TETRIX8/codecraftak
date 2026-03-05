@@ -55,6 +55,7 @@ const App = () => (
               <Route path="/anticheat" element={<AnticheatPanel />} />
               <Route path="/starosta" element={<StarostaPanel />} />
               <Route path="/moderator" element={<ModeratorPanel />} />
+              <Route path="/achievements" element={<Achievements />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
