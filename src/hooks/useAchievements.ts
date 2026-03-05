@@ -16,13 +16,13 @@ export function useCheckAndAwardBadges() {
       });
 
       if (error) throw error;
-      return data as { badge_name: string; badge_icon: string; newly_awarded: boolean }[];
+      return data as { badge_name: string; badge_icon: string; newly_awarded: boolean; points_awarded: number }[];
     },
     onSuccess: (data) => {
-      const newBadges = data?.filter(b => b.newly_awarded) || [];
+      const newBadges = data?.filter((b: any) => b.newly_awarded) || [];
       if (newBadges.length > 0) {
-        newBadges.forEach(b => {
-          toast.success(`${b.badge_icon} Новое достижение: ${b.badge_name}!`);
+        newBadges.forEach((b: any) => {
+          toast.success(`${b.badge_icon} Новое достижение: ${b.badge_name}! +${b.points_awarded} баллов`);
         });
       }
       queryClient.invalidateQueries({ queryKey: ['user-badges'] });

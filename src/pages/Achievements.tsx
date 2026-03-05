@@ -97,6 +97,13 @@ function AchievementCard({ badge, isEarned, earnedAt, progress }: {
               {badge.name}
             </span>
             {isEarned && <CheckCircle className="w-4 h-4 text-green-500" />}
+            <span className={cn(
+              'ml-auto text-xs font-bold flex items-center gap-1 px-2 py-0.5 rounded-full',
+              isEarned ? 'bg-amber-500/20 text-amber-400' : 'bg-muted/30 text-muted-foreground'
+            )}>
+              <Trophy className="w-3 h-3" />
+              +{badge.reward_points}
+            </span>
           </div>
           <p className="text-xs text-muted-foreground mb-3">{badge.description}</p>
 
@@ -168,6 +175,17 @@ export default function Achievements() {
   const earnedCount = userBadges?.length || 0;
   const totalCount = allBadges?.length || 0;
   const overallPct = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
+  
+  const earnedPoints = useMemo(() => {
+    if (!allBadges || !userBadges) return 0;
+    return allBadges
+      .filter(b => earnedMap[b.id])
+      .reduce((sum, b) => sum + (b.reward_points || 0), 0);
+  }, [allBadges, userBadges, earnedMap]);
+  
+  const totalPoints = useMemo(() => {
+    return allBadges?.reduce((sum, b) => sum + (b.reward_points || 0), 0) || 0;
+  }, [allBadges]);
 
   if (badgesLoading) {
     return (
@@ -203,7 +221,13 @@ export default function Achievements() {
               <TrendingUp className="w-5 h-5 text-primary" />
               <span className="font-semibold">Общий прогресс</span>
             </div>
-            <span className="text-2xl font-bold">{earnedCount} / {totalCount}</span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm flex items-center gap-1 text-amber-400 font-bold">
+                <Trophy className="w-4 h-4" />
+                {earnedPoints} / {totalPoints} баллов
+              </span>
+              <span className="text-2xl font-bold">{earnedCount} / {totalCount}</span>
+            </div>
           </div>
           <div className="h-4 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
