@@ -175,6 +175,17 @@ export default function Achievements() {
   const earnedCount = userBadges?.length || 0;
   const totalCount = allBadges?.length || 0;
   const overallPct = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
+  
+  const earnedPoints = useMemo(() => {
+    if (!allBadges || !userBadges) return 0;
+    return allBadges
+      .filter(b => earnedMap[b.id])
+      .reduce((sum, b) => sum + (b.reward_points || 0), 0);
+  }, [allBadges, userBadges, earnedMap]);
+  
+  const totalPoints = useMemo(() => {
+    return allBadges?.reduce((sum, b) => sum + (b.reward_points || 0), 0) || 0;
+  }, [allBadges]);
 
   if (badgesLoading) {
     return (
