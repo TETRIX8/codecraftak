@@ -1003,6 +1003,14 @@ export type Database = {
         }
         Returns: number
       }
+      check_and_award_badges: {
+        Args: { _user_id: string }
+        Returns: {
+          badge_icon: string
+          badge_name: string
+          newly_awarded: boolean
+        }[]
+      }
       deduct_game_bet: {
         Args: { _bet_amount: number; _game_id: string; _user_id: string }
         Returns: boolean
