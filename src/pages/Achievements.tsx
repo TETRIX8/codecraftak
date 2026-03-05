@@ -97,6 +97,13 @@ function AchievementCard({ badge, isEarned, earnedAt, progress }: {
               {badge.name}
             </span>
             {isEarned && <CheckCircle className="w-4 h-4 text-green-500" />}
+            <span className={cn(
+              'ml-auto text-xs font-bold flex items-center gap-1 px-2 py-0.5 rounded-full',
+              isEarned ? 'bg-amber-500/20 text-amber-400' : 'bg-muted/30 text-muted-foreground'
+            )}>
+              <Trophy className="w-3 h-3" />
+              +{badge.reward_points}
+            </span>
           </div>
           <p className="text-xs text-muted-foreground mb-3">{badge.description}</p>
 
