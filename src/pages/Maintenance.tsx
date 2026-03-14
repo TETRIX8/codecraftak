@@ -1,60 +1,23 @@
 import { motion } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
 
 export default function Maintenance() {
   const videoId = '115bP8b7RKSSW-YeQ_aD8FYwnFbvbB4kL';
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [muted, setMuted] = useState(true);
-  const [showUnmute, setShowUnmute] = useState(true);
-
-  // Try to autoplay muted first (browsers allow this), then offer unmute
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = true;
-    video.play().catch(() => {});
-    // Hide unmute hint after 8 seconds
-    const timer = setTimeout(() => setShowUnmute(false), 8000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    const next = !muted;
-    video.muted = next;
-    setMuted(next);
-    if (!next) video.play().catch(() => {});
-  };
 
   return (
-    <div className="fixed inset-0 z-[9999] overflow-hidden bg-black" onClick={toggleMute}>
-      {/* Video Background */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
-        src={`https://drive.google.com/uc?export=download&id=${videoId}`}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      />
+    <div className="fixed inset-0 z-[9999] overflow-hidden bg-black">
+      {/* Video Background - Google Drive iframe */}
+      <div className="absolute inset-[-100px] sm:inset-[-50px]">
+        <iframe
+          src={`https://drive.google.com/file/d/${videoId}/preview?autoplay=1`}
+          className="w-full h-full border-none"
+          allow="autoplay; encrypted-media; fullscreen"
+          allowFullScreen
+          style={{ pointerEvents: 'none' }}
+        />
+      </div>
 
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/50" />
-
-      {/* Unmute button */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: showUnmute || muted ? 1 : 0.4, y: 0 }}
-        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-        className="absolute bottom-6 right-6 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-all"
-      >
-        {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-        {muted ? 'Включить звук' : 'Выключить звук'}
-      </motion.button>
 
       {/* Glitch effect overlay */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -146,13 +109,13 @@ export default function Maintenance() {
       </div>
 
       {/* Corners */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute top-4 sm:top-8 left-4 sm:left-8 text-red-500 font-mono text-xs sm:text-sm">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute top-4 sm:top-8 left-4 sm:left-8 text-red-500 font-mono text-xs sm:text-sm z-20">
         [OFFLINE]
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute top-4 sm:top-8 right-4 sm:right-8 text-red-500 font-mono text-xs sm:text-sm">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute top-4 sm:top-8 right-4 sm:right-8 text-red-500 font-mono text-xs sm:text-sm z-20">
         [SYSTEM HALT]
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 text-white/30 font-mono text-xs">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 text-white/30 font-mono text-xs z-20">
         MoksHub // CodeCraft
       </motion.div>
     </div>
