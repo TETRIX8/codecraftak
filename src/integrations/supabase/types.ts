@@ -132,6 +132,7 @@ export type Database = {
           name: string
           requirement_type: string
           requirement_value: number
+          reward_points: number
         }
         Insert: {
           description: string
@@ -140,6 +141,7 @@ export type Database = {
           name: string
           requirement_type: string
           requirement_value: number
+          reward_points?: number
         }
         Update: {
           description?: string
@@ -148,6 +150,7 @@ export type Database = {
           name?: string
           requirement_type?: string
           requirement_value?: number
+          reward_points?: number
         }
         Relationships: []
       }
