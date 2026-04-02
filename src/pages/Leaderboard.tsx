@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Loader2, Crown, Star } from 'lucide-react';
-import { useLeaderboard, useProfile } from '@/hooks/useProfile';
+import { useLeaderboard, useProfile, type LeaderboardProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -165,7 +165,7 @@ export default function Leaderboard() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 1, type: "spring" }}
               >
-                <span className="text-5xl font-black text-yellow-400">{leader.reviews_completed * 10}</span>
+                <span className="text-5xl font-black text-yellow-400">{leader.score}</span>
                 <span className="text-xl text-yellow-400/60 ml-2">очков</span>
               </motion.div>
               <motion.p
@@ -264,7 +264,7 @@ export default function Leaderboard() {
                         <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[12px] border-b-[12px] border-l-[8px] border-transparent border-l-current opacity-30" />
                         
                         <div className={cn("font-black text-lg sm:text-2xl", style.numberText)}>
-                          {p.reviews_completed * 10} <span className="text-xs sm:text-sm font-bold opacity-80">очков</span>
+                          {p.score} <span className="text-xs sm:text-sm font-bold opacity-80">очков</span>
                         </div>
                         <div className={cn("text-xs font-semibold opacity-80", style.numberText)}>
                           Проверок: {p.reviews_completed}
@@ -338,7 +338,7 @@ export default function Leaderboard() {
             </div>
 
             {/* Rows */}
-            {rest.map((entry, index) => {
+            {rest.map((entry: LeaderboardProfile, index) => {
               const rank = index + 4;
               const isCurrentUser = entry.id === user?.id;
               const shieldColors = [
@@ -413,7 +413,7 @@ export default function Leaderboard() {
                   {/* Points */}
                   <div className="col-span-2 text-center">
                     <span className="font-black text-base sm:text-lg text-foreground">
-                      {entry.reviews_completed * 10}
+                      {entry.score}
                       <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">очков</span>
                     </span>
                   </div>
@@ -451,7 +451,7 @@ export default function Leaderboard() {
                   <div className="text-sm text-muted-foreground bg-background/50 px-4 py-2 rounded-full">
                     До #{currentUserRank}: нужно ещё{' '}
                     <span className="font-bold text-primary">
-                      {((leaderboard?.[currentUserRank - 1]?.reviews_completed || 0) - currentProfile.reviews_completed) * 10}
+                       {Math.max(0, ((leaderboard?.[currentUserRank - 1] as LeaderboardProfile | undefined)?.score || 0) - (((leaderboard?.[currentUserRank] as LeaderboardProfile | undefined)?.score) || 0))}
                     </span>{' '}
                     очков
                   </div>
