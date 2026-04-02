@@ -260,13 +260,7 @@ function AchievementCard({ badge, isEarned, earnedAt }: { badge: any; isEarned: 
     }
   };
 
-  const getBonusPoints = () => {
-    if (badge.requirement_type === 'leader_days') return 500;
-    if (badge.requirement_type === 'trust_rating' && badge.requirement_value >= 95) return 200;
-    if (badge.requirement_value >= 100) return 100;
-    if (badge.requirement_value >= 50) return 50;
-    return 25;
-  };
+  const getBonusPoints = () => badge.reward_points || 10;
 
   return (
     <motion.div
@@ -350,6 +344,11 @@ function AchievementCard({ badge, isEarned, earnedAt }: { badge: any; isEarned: 
           {isEarned && earnedAt && (
             <div className="text-xs text-muted-foreground/60 mt-1">
               {new Date(earnedAt).toLocaleDateString('ru-RU')}
+            </div>
+          )}
+          {!isEarned && (
+            <div className="text-xs text-muted-foreground/60 mt-1">
+              Не получено
             </div>
           )}
         </div>
@@ -731,17 +730,28 @@ export default function Profile() {
             </div>
 
             <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {allBadges?.slice(0, 6).map((badge) => {
-                const earnedBadge = userBadges?.find(ub => ub.badge_id === badge.id);
-                return (
+              {/* Show earned badges first, then unearned, sorted by date */}
+              {allBadges
+                ?.map(badge => ({
+                  badge,
+                  earnedBadge: userBadges?.find(ub => ub.badge_id === badge.id),
+                }))
+                .sort((a, b) => {
+                  if (!!a.earnedBadge !== !!b.earnedBadge) return a.earnedBadge ? -1 : 1;
+                  if (a.earnedBadge && b.earnedBadge) {
+                    return new Date(b.earnedBadge.earned_at).getTime() - new Date(a.earnedBadge.earned_at).getTime();
+                  }
+                  return 0;
+                })
+                .slice(0, 8)
+                .map(({ badge, earnedBadge }) => (
                   <AchievementCard
                     key={badge.id}
                     badge={badge}
                     isEarned={!!earnedBadge}
                     earnedAt={earnedBadge?.earned_at}
                   />
-                );
-              })}
+                ))}
             </div>
           </motion.div>
         </div>
