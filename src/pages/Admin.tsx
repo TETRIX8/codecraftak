@@ -5,7 +5,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { 
   Plus, Edit2, Trash2, Loader2, ArrowLeft, Shield, Users, Bell, 
   BookOpen, Star, Image, Code2, Scale, UserCheck, LayoutDashboard,
-  ListTodo, ChevronRight
+  ListTodo, ChevronRight, UserX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import { AdminAppeals } from '@/components/admin/AdminAppeals';
 import { AdminAvatarPermissions } from '@/components/admin/AdminAvatarPermissions';
 import { AdminRoles } from '@/components/admin/AdminRoles';
 import { AdminUserApprovals } from '@/components/admin/AdminUserApprovals';
+import { AdminHardDelete } from '@/components/admin/AdminHardDelete';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -267,6 +268,7 @@ export default function Admin() {
     { value: 'topics', label: 'Темы', icon: BookOpen },
     { value: 'avatars', label: 'Аватары', icon: Image },
     { value: 'notifications', label: 'Рассылка', icon: Bell },
+    { value: 'harddelete', label: 'Удаление', icon: UserX },
   ];
 
   return (
@@ -569,6 +571,11 @@ export default function Admin() {
           {/* Notifications Tab */}
           <TabsContent value="notifications">
             <AdminNotifications />
+          </TabsContent>
+
+          {/* Hard Delete Tab */}
+          <TabsContent value="harddelete">
+            <AdminHardDelete />
           </TabsContent>
         </Tabs>
       </div>
