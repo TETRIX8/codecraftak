@@ -5,7 +5,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { 
   Plus, Edit2, Trash2, Loader2, ArrowLeft, Shield, Users, Bell, 
   BookOpen, Star, Image, Code2, Scale, UserCheck, LayoutDashboard,
-  ListTodo, ChevronRight
+  ListTodo, ChevronRight, UserX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
