@@ -268,6 +268,7 @@ export default function Admin() {
     { value: 'topics', label: 'Темы', icon: BookOpen },
     { value: 'avatars', label: 'Аватары', icon: Image },
     { value: 'notifications', label: 'Рассылка', icon: Bell },
+    { value: 'harddelete', label: 'Удаление', icon: UserX },
   ];
 
   return (
