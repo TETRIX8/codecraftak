@@ -27,6 +27,7 @@ import { AdminAppeals } from '@/components/admin/AdminAppeals';
 import { AdminAvatarPermissions } from '@/components/admin/AdminAvatarPermissions';
 import { AdminRoles } from '@/components/admin/AdminRoles';
 import { AdminUserApprovals } from '@/components/admin/AdminUserApprovals';
+import { AdminHardDelete } from '@/components/admin/AdminHardDelete';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
