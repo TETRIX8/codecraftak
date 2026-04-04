@@ -572,6 +572,11 @@ export default function Admin() {
           <TabsContent value="notifications">
             <AdminNotifications />
           </TabsContent>
+
+          {/* Hard Delete Tab */}
+          <TabsContent value="harddelete">
+            <AdminHardDelete />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
