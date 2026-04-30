@@ -85,26 +85,29 @@ export default function Tasks() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="available" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Доступные
+          <TabsList
+            className="grid w-full grid-cols-3 backdrop-blur-xl border border-white/10 p-1 h-auto"
+            style={{ background: 'linear-gradient(135deg, hsl(240 40% 12% / 0.6), hsl(245 50% 8% / 0.6))' }}
+          >
+            <TabsTrigger value="available" className="flex items-center gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Доступные</span>
               {availableTasks.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{availableTasks.length}</Badge>
+                <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary border-primary/30">{availableTasks.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex items-center gap-2">
+            <TabsTrigger value="pending" className="flex items-center gap-2 data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400">
               <Clock className="h-4 w-4" />
-              В проверке
+              <span className="hidden sm:inline">В проверке</span>
               {pendingTasks.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{pendingTasks.length}</Badge>
+                <Badge variant="secondary" className="ml-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">{pendingTasks.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center gap-2">
+            <TabsTrigger value="completed" className="flex items-center gap-2 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400">
               <CheckCircle className="h-4 w-4" />
-              Выполненные
+              <span className="hidden sm:inline">Готово</span>
               {completedTasks.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{completedTasks.length}</Badge>
+                <Badge variant="secondary" className="ml-1 bg-green-500/20 text-green-400 border-green-500/30">{completedTasks.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
