@@ -4,6 +4,7 @@ import { useLeaderboard, useProfile, type LeaderboardProfile } from '@/hooks/use
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { CosmicBackground } from '@/components/common/CosmicBackground';
 
 // Sparkle star component
 const SparkStar = ({ delay, x, y, size }: { delay: number; x: string; y: string; size: number }) => (
