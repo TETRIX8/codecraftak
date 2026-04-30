@@ -4,6 +4,7 @@ import { useLeaderboard, useProfile, type LeaderboardProfile } from '@/hooks/use
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { CosmicBackground } from '@/components/common/CosmicBackground';
 
 // Sparkle star component
 const SparkStar = ({ delay, x, y, size }: { delay: number; x: string; y: string; size: number }) => (
@@ -92,11 +93,9 @@ export default function Leaderboard() {
   const avatarSizes = ['w-24 h-24', 'w-32 h-32', 'w-22 h-22'];
 
   return (
-    <div className="min-h-screen py-24 overflow-hidden relative"
-      style={{
-        background: 'radial-gradient(ellipse at 50% 0%, hsl(222 47% 12%) 0%, hsl(222 47% 6%) 60%, hsl(225 50% 4%) 100%)',
-      }}
-    >
+    <div className="min-h-screen py-24 overflow-hidden relative">
+      <CosmicBackground />
+
       {/* Background sparkles */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {[...Array(15)].map((_, i) => (
