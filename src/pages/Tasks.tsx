@@ -124,16 +124,16 @@ export default function Tasks() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Поиск заданий..."
+                placeholder="Поиск миссий..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-card border-border"
+                className="pl-10 backdrop-blur-xl border-white/10 bg-card/40"
               />
             </div>
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="sm:w-auto"
+              className="sm:w-auto backdrop-blur-xl border-white/10 bg-card/40 hover:bg-primary/10 hover:border-primary/40"
             >
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Фильтры
@@ -145,7 +145,8 @@ export default function Tasks() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-6 rounded-xl bg-card border border-border"
+              className="p-6 rounded-2xl backdrop-blur-xl border border-white/10"
+              style={{ background: 'linear-gradient(135deg, hsl(240 40% 12% / 0.6), hsl(245 50% 8% / 0.6))' }}
             >
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
