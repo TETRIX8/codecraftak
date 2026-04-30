@@ -319,40 +319,64 @@ function EmptyState({ emoji, title, description }: { emoji: string; title: strin
   );
 }
 
+function CosmicWrap({ children, accent }: { children: React.ReactNode; accent: 'yellow' | 'green' | 'red' }) {
+  const colors = {
+    yellow: 'hsl(45 90% 60% / 0.5)',
+    green: 'hsl(140 70% 55% / 0.5)',
+    red: 'hsl(0 75% 60% / 0.5)',
+  };
+  return (
+    <div className="relative group h-full">
+      <div
+        className="absolute -inset-0.5 rounded-2xl opacity-30 group-hover:opacity-80 blur transition-opacity duration-500"
+        style={{ background: `linear-gradient(135deg, ${colors[accent]}, hsl(280 80% 60% / 0.4))` }}
+      />
+      <div
+        className="relative h-full rounded-2xl border border-white/10 backdrop-blur-xl"
+        style={{ background: 'linear-gradient(135deg, hsl(240 40% 12% / 0.7), hsl(245 50% 8% / 0.7))' }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function PendingTaskCard({ task, index }: { task: TaskWithSolution; index: number }) {
   const navigate = useNavigate();
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
+      whileHover={{ y: -4 }}
     >
-      <Card className="h-full hover:border-yellow-500/50 transition-colors border-yellow-500/30">
-        <CardContent className="p-6">
+      <CosmicWrap accent="yellow">
+        <div className="p-6">
           <div className="flex items-start justify-between mb-3">
-            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">
+            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/40">
               <Clock className="h-3 w-3 mr-1" />
               На проверке
             </Badge>
             <Badge variant="secondary">{task.difficulty}</Badge>
           </div>
-          
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{task.title}</h3>
+
+          <h3 className="font-bold text-lg mb-2 line-clamp-2">{task.title}</h3>
           <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{task.description}</p>
-          
+
           <div className="flex items-center justify-between">
-            <Badge variant="outline">{task.language}</Badge>
-            <Button 
-              variant="outline" 
+            <Badge variant="outline" className="border-white/10">{task.language}</Badge>
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate(`/tasks/${task.id}`)}
+              className="border-white/10 hover:bg-yellow-500/10 hover:border-yellow-500/40"
             >
               Подробнее
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CosmicWrap>
     </motion.div>
   );
 }
@@ -360,62 +384,59 @@ function PendingTaskCard({ task, index }: { task: TaskWithSolution; index: numbe
 function CompletedTaskCard({ task, index }: { task: TaskWithSolution; index: number }) {
   const navigate = useNavigate();
   const isAccepted = task.solution?.status === 'accepted';
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
+      whileHover={{ y: -4 }}
     >
-      <Card className={`h-full transition-colors ${
-        isAccepted 
-          ? 'hover:border-green-500/50 border-green-500/30' 
-          : 'hover:border-red-500/50 border-red-500/30'
-      }`}>
-        <CardContent className="p-6">
+      <CosmicWrap accent={isAccepted ? 'green' : 'red'}>
+        <div className="p-6">
           <div className="flex items-start justify-between mb-3">
             {isAccepted ? (
-              <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
+              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/40">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Принято
               </Badge>
             ) : (
-              <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">
+              <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/40">
                 <XCircle className="h-3 w-3 mr-1" />
                 Отклонено
               </Badge>
             )}
             <Badge variant="secondary">{task.difficulty}</Badge>
           </div>
-          
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{task.title}</h3>
+
+          <h3 className="font-bold text-lg mb-2 line-clamp-2">{task.title}</h3>
           <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{task.description}</p>
-          
+
           <div className="flex items-center justify-between">
-            <Badge variant="outline">{task.language}</Badge>
-            {!isAccepted && (
-              <Button 
-                variant="outline" 
+            <Badge variant="outline" className="border-white/10">{task.language}</Badge>
+            {!isAccepted ? (
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => navigate(`/tasks/${task.id}`)}
-                className="text-orange-500 border-orange-500/50 hover:bg-orange-500/10"
+                className="text-orange-400 border-orange-500/40 hover:bg-orange-500/10"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Пересдать
               </Button>
-            )}
-            {isAccepted && (
-              <Button 
-                variant="outline" 
+            ) : (
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => navigate(`/tasks/${task.id}`)}
+                className="border-white/10 hover:bg-green-500/10 hover:border-green-500/40"
               >
                 Просмотр
               </Button>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CosmicWrap>
     </motion.div>
   );
 }
