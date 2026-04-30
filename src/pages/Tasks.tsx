@@ -57,17 +57,29 @@ export default function Tasks() {
   const completedTasks = filterTasks(data?.completed || []);
 
   return (
-    <div className="min-h-screen bg-background py-24">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen py-24 relative">
+      <CosmicBackground />
+      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-10 text-center"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4">Задания</h1>
-          <p className="text-muted-foreground text-lg">
-            Выберите задание для решения. Чтобы отправить решение, необходимо сначала проверить чужое задание.
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary/30 backdrop-blur-md mb-5"
+            style={{ background: 'linear-gradient(135deg, hsl(280 80% 60% / 0.15), hsl(200 90% 60% / 0.15))' }}
+          >
+            <Rocket className="w-4 h-4 text-primary" />
+            <span className="text-sm font-bold text-primary tracking-wider uppercase">Космические миссии</span>
+          </motion.div>
+          <h1 className="text-4xl sm:text-6xl font-black mb-4 bg-gradient-to-r from-purple-300 via-blue-300 to-pink-300 bg-clip-text text-transparent">
+            Задания
+          </h1>
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+            Выбери миссию и отправляйся в путешествие. Чтобы отправить решение — сначала проверь чужую работу.
           </p>
         </motion.div>
 
