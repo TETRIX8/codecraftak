@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, Loader2, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2, Clock, CheckCircle, XCircle, RefreshCw, Rocket, Sparkles } from 'lucide-react';
+import { CosmicBackground } from '@/components/common/CosmicBackground';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
