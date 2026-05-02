@@ -436,7 +436,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => onClose()}
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
         >
           <motion.div
