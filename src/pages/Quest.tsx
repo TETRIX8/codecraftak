@@ -613,8 +613,9 @@ export default function Quest() {
               key={island.id}
               island={island}
               index={i}
-              onClick={setSelected}
+              onClick={handleIslandClick}
               unlocked
+              completed={completed.has(island.id)}
             />
           ))}
 
