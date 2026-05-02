@@ -339,7 +339,73 @@ function CloudIntro({ onDone }: { onDone: () => void }) {
   );
 }
 
-function LevelDialog({ island, onClose }: { island: Island | null; onClose: () => void }) {
+function MoonFallTransition({ island }: { island: Island }) {
+  // Camera "falls" onto the island like a moon descending from the sky.
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-[65] pointer-events-none overflow-hidden"
+      style={{
+        background: `radial-gradient(ellipse at ${island.x}% ${island.y}%, hsl(${island.hue} 70% 12% / 0.4), hsl(240 80% 4% / 0.95) 70%)`,
+        transformOrigin: `${island.x}% ${island.y}%`,
+      }}
+    >
+      {/* The "moon" — a glowing orb falling onto target */}
+      <motion.div
+        initial={{ y: '-60vh', x: '-50%', scale: 0.6, opacity: 0 }}
+        animate={{ y: 0, x: '-50%', scale: 4, opacity: 1 }}
+        transition={{ duration: 1.0, ease: [0.5, 0, 0.75, 0] }}
+        className="absolute rounded-full"
+        style={{
+          left: `${island.x}%`,
+          top: `${island.y}%`,
+          width: 120,
+          height: 120,
+          background: `radial-gradient(circle at 35% 35%, hsl(${island.hue} 90% 80%), hsl(${island.hue} 80% 45%) 60%, hsl(${island.hue} 70% 20%))`,
+          boxShadow: `0 0 80px hsl(${island.hue} 90% 60% / 0.9), 0 0 200px hsl(${island.hue} 90% 60% / 0.6)`,
+        }}
+      />
+      {/* Shockwave */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 8, opacity: [0, 0.8, 0] }}
+        transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
+        className="absolute rounded-full border-2"
+        style={{
+          left: `${island.x}%`,
+          top: `${island.y}%`,
+          width: 100,
+          height: 100,
+          marginLeft: -50,
+          marginTop: -50,
+          borderColor: `hsl(${island.hue} 90% 70% / 0.8)`,
+          boxShadow: `0 0 40px hsl(${island.hue} 90% 60% / 0.6)`,
+        }}
+      />
+      {/* Streak lines (motion blur of fall) */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ y: '-30vh', opacity: 0 }}
+          animate={{ y: '40vh', opacity: [0, 0.6, 0] }}
+          transition={{ duration: 0.6, delay: 0.1 + i * 0.05, ease: 'easeIn' }}
+          className="absolute w-px h-32"
+          style={{
+            left: `${island.x + (Math.random() - 0.5) * 20}%`,
+            top: `${island.y - 30}%`,
+            background: `linear-gradient(180deg, transparent, hsl(${island.hue} 90% 70%))`,
+            filter: 'blur(1px)',
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function LevelDialog({ island, onClose }: { island: Island | null; onClose: (completed?: boolean) => void }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
 
@@ -357,7 +423,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
   const submitCode = () => {
     if (code.trim() === QUEST1_CODE) {
       window.open(QUEST1_URL, '_blank', 'noopener,noreferrer');
-      onClose();
+      onClose(true);
     } else {
       setError(true);
     }
