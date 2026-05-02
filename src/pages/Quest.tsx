@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CosmicBackground } from '@/components/common/CosmicBackground';
-import { Sparkles, Lock, Star, Crown, Flame, Trees, Mountain, Waves, Gem, Castle, Palmtree } from 'lucide-react';
+import { Sparkles, Lock, Star, Crown, Flame, Trees, Mountain, Waves, Gem, Castle, Palmtree, Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 10 islands with curated positions to mimic the reference flow (top row → bottom row, snake-like)
 type IslandKind = 'forest' | 'palm' | 'beach' | 'jungle' | 'volcano' | 'mini' | 'falls' | 'crystal' | 'desert' | 'castle';
