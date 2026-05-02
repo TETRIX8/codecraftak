@@ -330,6 +330,29 @@ function CloudIntro({ onDone }: { onDone: () => void }) {
 }
 
 function LevelDialog({ island, onClose }: { island: Island | null; onClose: () => void }) {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!island) {
+      setCode('');
+      setError(false);
+    }
+  }, [island]);
+
+  const isFirst = island?.id === 1;
+  const QUEST1_URL = 'https://v0-akkonec.vercel.app/quest.html';
+  const QUEST1_CODE = '2002';
+
+  const submitCode = () => {
+    if (code.trim() === QUEST1_CODE) {
+      window.open(QUEST1_URL, '_blank', 'noopener,noreferrer');
+      onClose();
+    } else {
+      setError(true);
+    }
+  };
+
   return (
     <AnimatePresence>
       {island && (
@@ -370,21 +393,62 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
             <h2 className="text-3xl font-bold mb-2" style={{ color: `hsl(${island.hue} 80% 75%)` }}>
               Остров #{island.id}
             </h2>
-            <p className="text-muted-foreground mb-6">
-              Уровень разблокирован! Скоро здесь появятся испытания.
-            </p>
-            <div className="flex items-center justify-center gap-2 text-yellow-400 mb-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.3 + i * 0.15, type: 'spring', bounce: 0.6 }}
+            {isFirst ? (
+              <>
+                <p className="text-muted-foreground mb-4">
+                  Введи код квеста, чтобы открыть портал.
+                </p>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value); setError(false); }}
+                    onKeyDown={(e) => e.key === 'Enter' && submitCode()}
+                    placeholder="Код квеста"
+                    autoFocus
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-center tracking-[0.3em] font-mono text-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-yellow-400/60 focus:bg-white/10 transition"
+                    style={{ boxShadow: error ? '0 0 0 2px hsl(0 80% 60% / 0.6)' : undefined }}
+                  />
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-red-400 text-sm mt-2"
+                    >
+                      Неверный код. Попробуй ещё раз.
+                    </motion.p>
+                  )}
+                </div>
+                <button
+                  onClick={submitCode}
+                  className="w-full px-8 py-3 rounded-full font-bold tracking-wide text-background mb-3"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${island.hue} 80% 60%), hsl(${(island.hue + 40) % 360} 80% 55%))`,
+                    boxShadow: `0 8px 20px hsl(${island.hue} 80% 40% / 0.5)`,
+                  }}
                 >
-                  <Star className="w-8 h-8 fill-yellow-400" />
-                </motion.div>
-              ))}
-            </div>
+                  Открыть портал
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground mb-6">
+                  Уровень разблокирован! Скоро здесь появятся испытания.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-yellow-400 mb-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.3 + i * 0.15, type: 'spring', bounce: 0.6 }}
+                    >
+                      <Star className="w-8 h-8 fill-yellow-400" />
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
             <button
               onClick={onClose}
               className="px-8 py-3 rounded-full font-bold tracking-wide text-background"
