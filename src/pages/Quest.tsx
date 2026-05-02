@@ -330,6 +330,29 @@ function CloudIntro({ onDone }: { onDone: () => void }) {
 }
 
 function LevelDialog({ island, onClose }: { island: Island | null; onClose: () => void }) {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!island) {
+      setCode('');
+      setError(false);
+    }
+  }, [island]);
+
+  const isFirst = island?.id === 1;
+  const QUEST1_URL = 'https://v0-akkonec.vercel.app/quest.html';
+  const QUEST1_CODE = '2002';
+
+  const submitCode = () => {
+    if (code.trim() === QUEST1_CODE) {
+      window.open(QUEST1_URL, '_blank', 'noopener,noreferrer');
+      onClose();
+    } else {
+      setError(true);
+    }
+  };
+
   return (
     <AnimatePresence>
       {island && (
