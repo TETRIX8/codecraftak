@@ -578,6 +578,27 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          island_id: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          island_id: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          island_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string
