@@ -43,11 +43,12 @@ const ICON_MAP: Record<IslandKind, any> = {
   castle: Castle,
 };
 
-function FloatingIsland({ island, index, onClick, unlocked }: {
+function FloatingIsland({ island, index, onClick, unlocked, completed }: {
   island: Island;
   index: number;
   onClick: (i: Island) => void;
   unlocked: boolean;
+  completed?: boolean;
 }) {
   const Icon = ICON_MAP[island.kind];
   const baseHue = island.hue;
