@@ -65,23 +65,31 @@ function FloatingIsland({ island, index, onClick, unlocked, completed }: {
       whileHover={unlocked ? { scale: 1.08 } : {}}
       whileTap={unlocked ? { scale: 0.95 } : {}}
     >
-      {/* Bobbing wrapper */}
+      {/* Bobbing wrapper — synchronized wave traveling across the chain */}
       <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4 + (index % 3), repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+        animate={{ y: [0, -16, 0, 6, 0], rotate: [0, -2, 0, 2, 0] }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: index * 0.35,
+          times: [0, 0.25, 0.5, 0.75, 1],
+        }}
         style={{ width: 110 * island.size, height: 110 * island.size }}
         className="relative"
       >
-        {/* Aura glow */}
-        <div
-          className="absolute inset-0 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"
+        {/* Aura glow — pulses with the wave */}
+        <motion.div
+          className="absolute inset-0 rounded-full blur-2xl group-hover:opacity-100 transition-opacity"
           style={{ background: `radial-gradient(circle, hsl(${baseHue} 80% 60% / 0.55), transparent 70%)` }}
+          animate={{ opacity: [0.4, 0.85, 0.4], scale: [1, 1.15, 1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.35 }}
         />
 
         {/* Floating shadow under island */}
         <motion.div
-          animate={{ scaleX: [1, 0.85, 1], opacity: [0.35, 0.2, 0.35] }}
-          transition={{ duration: 4 + (index % 3), repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+          animate={{ scaleX: [1, 0.7, 1, 1.1, 1], opacity: [0.35, 0.15, 0.35, 0.4, 0.35] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.35 }}
           className="absolute left-1/2 -translate-x-1/2 w-[70%] h-3 rounded-full bg-black/60 blur-md"
           style={{ bottom: -10 }}
         />
