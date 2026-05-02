@@ -526,7 +526,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
               </>
             )}
             <button
-              onClick={onClose}
+              onClick={() => onClose()}
               className="px-8 py-3 rounded-full font-bold tracking-wide text-background"
               style={{
                 background: `linear-gradient(135deg, hsl(${island.hue} 80% 60%), hsl(${(island.hue + 40) % 360} 80% 55%))`,
