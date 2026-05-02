@@ -135,8 +135,15 @@ function FloatingIsland({ island, index, onClick, unlocked, completed }: {
               fontFamily: 'Georgia, serif',
             }}
           >
-            {unlocked ? island.id : <Lock className="w-5 h-5" />}
+            {completed ? <Check className="w-6 h-6" strokeWidth={3} /> : unlocked ? island.id : <Lock className="w-5 h-5" />}
           </motion.div>
+
+          {completed && (
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{ boxShadow: '0 0 30px hsl(140 80% 55% / 0.7), inset 0 0 20px hsl(140 80% 55% / 0.3)' }}
+            />
+          )}
 
           {/* Sparkle for unlocked */}
           {unlocked && (
