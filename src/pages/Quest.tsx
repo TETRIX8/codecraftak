@@ -477,8 +477,47 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
 }
 
 export default function Quest() {
+  const { user } = useAuth();
   const [intro, setIntro] = useState(true);
   const [selected, setSelected] = useState<Island | null>(null);
+  const [zooming, setZooming] = useState<Island | null>(null);
+  const [completed, setCompleted] = useState<Set<number>>(new Set());
+
+  // Load progress
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('quest_progress')
+        .select('island_id')
+        .eq('user_id', user.id);
+      if (data) setCompleted(new Set(data.map((r: any) => r.island_id)));
+    })();
+  }, [user]);
+
+  const markCompleted = async (islandId: number) => {
+    if (!user || completed.has(islandId)) return;
+    const next = new Set(completed);
+    next.add(islandId);
+    setCompleted(next);
+    await supabase
+      .from('quest_progress')
+      .insert({ user_id: user.id, island_id: islandId });
+  };
+
+  const handleIslandClick = (island: Island) => {
+    // Cinematic "moon falling" zoom-in to the island, then open dialog
+    setZooming(island);
+    setTimeout(() => {
+      setZooming(null);
+      setSelected(island);
+    }, 1100);
+  };
+
+  const handleDialogClose = (didComplete?: boolean) => {
+    if (didComplete && selected) markCompleted(selected.id);
+    setSelected(null);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
