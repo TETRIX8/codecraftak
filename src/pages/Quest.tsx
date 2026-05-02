@@ -472,15 +472,24 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
             {isFirst ? (
               <>
                 <p className="text-muted-foreground mb-4">
-                  Введи код квеста, чтобы открыть портал.
+                  Перейди к квесту, найди ключ и введи его сюда, чтобы открыть портал.
                 </p>
+                <a
+                  href={QUEST1_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 w-full justify-center px-6 py-3 rounded-xl font-semibold mb-4 border border-white/15 bg-white/5 hover:bg-white/10 transition text-foreground"
+                >
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
+                  Перейти к квесту
+                </a>
                 <div className="mb-4">
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => { setCode(e.target.value); setError(false); }}
                     onKeyDown={(e) => e.key === 'Enter' && submitCode()}
-                    placeholder="Код квеста"
+                    placeholder="Введите ключ"
                     autoFocus
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-center tracking-[0.3em] font-mono text-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-yellow-400/60 focus:bg-white/10 transition"
                     style={{ boxShadow: error ? '0 0 0 2px hsl(0 80% 60% / 0.6)' : undefined }}
@@ -491,7 +500,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
                       animate={{ opacity: 1, y: 0 }}
                       className="text-red-400 text-sm mt-2"
                     >
-                      Неверный код. Попробуй ещё раз.
+                      Неверный ключ. Попробуй ещё раз.
                     </motion.p>
                   )}
                 </div>
