@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CosmicBackground } from '@/components/common/CosmicBackground';
-import { Sparkles, Lock, Star, Crown, Flame, Trees, Mountain, Waves, Gem, Castle, Palmtree } from 'lucide-react';
+import { Sparkles, Lock, Star, Crown, Flame, Trees, Mountain, Waves, Gem, Castle, Palmtree, Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 10 islands with curated positions to mimic the reference flow (top row → bottom row, snake-like)
 type IslandKind = 'forest' | 'palm' | 'beach' | 'jungle' | 'volcano' | 'mini' | 'falls' | 'crystal' | 'desert' | 'castle';
@@ -41,11 +43,12 @@ const ICON_MAP: Record<IslandKind, any> = {
   castle: Castle,
 };
 
-function FloatingIsland({ island, index, onClick, unlocked }: {
+function FloatingIsland({ island, index, onClick, unlocked, completed }: {
   island: Island;
   index: number;
   onClick: (i: Island) => void;
   unlocked: boolean;
+  completed?: boolean;
 }) {
   const Icon = ICON_MAP[island.kind];
   const baseHue = island.hue;
@@ -132,8 +135,15 @@ function FloatingIsland({ island, index, onClick, unlocked }: {
               fontFamily: 'Georgia, serif',
             }}
           >
-            {unlocked ? island.id : <Lock className="w-5 h-5" />}
+            {completed ? <Check className="w-6 h-6" strokeWidth={3} /> : unlocked ? island.id : <Lock className="w-5 h-5" />}
           </motion.div>
+
+          {completed && (
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{ boxShadow: '0 0 30px hsl(140 80% 55% / 0.7), inset 0 0 20px hsl(140 80% 55% / 0.3)' }}
+            />
+          )}
 
           {/* Sparkle for unlocked */}
           {unlocked && (
@@ -329,7 +339,73 @@ function CloudIntro({ onDone }: { onDone: () => void }) {
   );
 }
 
-function LevelDialog({ island, onClose }: { island: Island | null; onClose: () => void }) {
+function MoonFallTransition({ island }: { island: Island }) {
+  // Camera "falls" onto the island like a moon descending from the sky.
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-[65] pointer-events-none overflow-hidden"
+      style={{
+        background: `radial-gradient(ellipse at ${island.x}% ${island.y}%, hsl(${island.hue} 70% 12% / 0.4), hsl(240 80% 4% / 0.95) 70%)`,
+        transformOrigin: `${island.x}% ${island.y}%`,
+      }}
+    >
+      {/* The "moon" — a glowing orb falling onto target */}
+      <motion.div
+        initial={{ y: '-60vh', x: '-50%', scale: 0.6, opacity: 0 }}
+        animate={{ y: 0, x: '-50%', scale: 4, opacity: 1 }}
+        transition={{ duration: 1.0, ease: [0.5, 0, 0.75, 0] }}
+        className="absolute rounded-full"
+        style={{
+          left: `${island.x}%`,
+          top: `${island.y}%`,
+          width: 120,
+          height: 120,
+          background: `radial-gradient(circle at 35% 35%, hsl(${island.hue} 90% 80%), hsl(${island.hue} 80% 45%) 60%, hsl(${island.hue} 70% 20%))`,
+          boxShadow: `0 0 80px hsl(${island.hue} 90% 60% / 0.9), 0 0 200px hsl(${island.hue} 90% 60% / 0.6)`,
+        }}
+      />
+      {/* Shockwave */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 8, opacity: [0, 0.8, 0] }}
+        transition={{ duration: 0.8, delay: 0.85, ease: 'easeOut' }}
+        className="absolute rounded-full border-2"
+        style={{
+          left: `${island.x}%`,
+          top: `${island.y}%`,
+          width: 100,
+          height: 100,
+          marginLeft: -50,
+          marginTop: -50,
+          borderColor: `hsl(${island.hue} 90% 70% / 0.8)`,
+          boxShadow: `0 0 40px hsl(${island.hue} 90% 60% / 0.6)`,
+        }}
+      />
+      {/* Streak lines (motion blur of fall) */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ y: '-30vh', opacity: 0 }}
+          animate={{ y: '40vh', opacity: [0, 0.6, 0] }}
+          transition={{ duration: 0.6, delay: 0.1 + i * 0.05, ease: 'easeIn' }}
+          className="absolute w-px h-32"
+          style={{
+            left: `${island.x + (Math.random() - 0.5) * 20}%`,
+            top: `${island.y - 30}%`,
+            background: `linear-gradient(180deg, transparent, hsl(${island.hue} 90% 70%))`,
+            filter: 'blur(1px)',
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function LevelDialog({ island, onClose }: { island: Island | null; onClose: (completed?: boolean) => void }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(false);
 
@@ -347,7 +423,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
   const submitCode = () => {
     if (code.trim() === QUEST1_CODE) {
       window.open(QUEST1_URL, '_blank', 'noopener,noreferrer');
-      onClose();
+      onClose(true);
     } else {
       setError(true);
     }
@@ -360,7 +436,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => onClose()}
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
         >
           <motion.div
@@ -450,7 +526,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
               </>
             )}
             <button
-              onClick={onClose}
+              onClick={() => onClose()}
               className="px-8 py-3 rounded-full font-bold tracking-wide text-background"
               style={{
                 background: `linear-gradient(135deg, hsl(${island.hue} 80% 60%), hsl(${(island.hue + 40) % 360} 80% 55%))`,
@@ -467,8 +543,47 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: () =
 }
 
 export default function Quest() {
+  const { user } = useAuth();
   const [intro, setIntro] = useState(true);
   const [selected, setSelected] = useState<Island | null>(null);
+  const [zooming, setZooming] = useState<Island | null>(null);
+  const [completed, setCompleted] = useState<Set<number>>(new Set());
+
+  // Load progress
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('quest_progress')
+        .select('island_id')
+        .eq('user_id', user.id);
+      if (data) setCompleted(new Set(data.map((r: any) => r.island_id)));
+    })();
+  }, [user]);
+
+  const markCompleted = async (islandId: number) => {
+    if (!user || completed.has(islandId)) return;
+    const next = new Set(completed);
+    next.add(islandId);
+    setCompleted(next);
+    await supabase
+      .from('quest_progress')
+      .insert({ user_id: user.id, island_id: islandId });
+  };
+
+  const handleIslandClick = (island: Island) => {
+    // Cinematic "moon falling" zoom-in to the island, then open dialog
+    setZooming(island);
+    setTimeout(() => {
+      setZooming(null);
+      setSelected(island);
+    }, 1100);
+  };
+
+  const handleDialogClose = (didComplete?: boolean) => {
+    if (didComplete && selected) markCompleted(selected.id);
+    setSelected(null);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -564,8 +679,9 @@ export default function Quest() {
               key={island.id}
               island={island}
               index={i}
-              onClick={setSelected}
+              onClick={handleIslandClick}
               unlocked
+              completed={completed.has(island.id)}
             />
           ))}
 
@@ -594,7 +710,14 @@ export default function Quest() {
         </motion.p>
       </div>
 
-      <LevelDialog island={selected} onClose={() => setSelected(null)} />
+      <AnimatePresence>
+        {zooming && <MoonFallTransition island={zooming} />}
+      </AnimatePresence>
+
+      <LevelDialog island={selected} onClose={(done) => handleDialogClose(done)} />
+      <div className="text-center pb-10 text-xs text-foreground/50">
+        Пройдено островов: <span className="text-yellow-300 font-bold">{completed.size}</span> / {ISLANDS.length}
+      </div>
     </div>
   );
 }
