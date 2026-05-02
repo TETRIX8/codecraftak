@@ -644,7 +644,14 @@ export default function Quest() {
         </motion.p>
       </div>
 
-      <LevelDialog island={selected} onClose={() => setSelected(null)} />
+      <AnimatePresence>
+        {zooming && <MoonFallTransition island={zooming} />}
+      </AnimatePresence>
+
+      <LevelDialog island={selected} onClose={(done) => handleDialogClose(done)} />
+      <div className="text-center pb-10 text-xs text-foreground/50">
+        Пройдено островов: <span className="text-yellow-300 font-bold">{completed.size}</span> / {ISLANDS.length}
+      </div>
     </div>
   );
 }
