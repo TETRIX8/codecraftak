@@ -65,23 +65,31 @@ function FloatingIsland({ island, index, onClick, unlocked, completed }: {
       whileHover={unlocked ? { scale: 1.08 } : {}}
       whileTap={unlocked ? { scale: 0.95 } : {}}
     >
-      {/* Bobbing wrapper */}
+      {/* Bobbing wrapper — synchronized wave traveling across the chain */}
       <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 4 + (index % 3), repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+        animate={{ y: [0, -16, 0, 6, 0], rotate: [0, -2, 0, 2, 0] }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: index * 0.35,
+          times: [0, 0.25, 0.5, 0.75, 1],
+        }}
         style={{ width: 110 * island.size, height: 110 * island.size }}
         className="relative"
       >
-        {/* Aura glow */}
-        <div
-          className="absolute inset-0 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity"
+        {/* Aura glow — pulses with the wave */}
+        <motion.div
+          className="absolute inset-0 rounded-full blur-2xl group-hover:opacity-100 transition-opacity"
           style={{ background: `radial-gradient(circle, hsl(${baseHue} 80% 60% / 0.55), transparent 70%)` }}
+          animate={{ opacity: [0.4, 0.85, 0.4], scale: [1, 1.15, 1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.35 }}
         />
 
         {/* Floating shadow under island */}
         <motion.div
-          animate={{ scaleX: [1, 0.85, 1], opacity: [0.35, 0.2, 0.35] }}
-          transition={{ duration: 4 + (index % 3), repeat: Infinity, ease: 'easeInOut', delay: index * 0.3 }}
+          animate={{ scaleX: [1, 0.7, 1, 1.1, 1], opacity: [0.35, 0.15, 0.35, 0.4, 0.35] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: index * 0.35 }}
           className="absolute left-1/2 -translate-x-1/2 w-[70%] h-3 rounded-full bg-black/60 blur-md"
           style={{ bottom: -10 }}
         />
@@ -472,15 +480,24 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
             {isFirst ? (
               <>
                 <p className="text-muted-foreground mb-4">
-                  Введи код квеста, чтобы открыть портал.
+                  Перейди к квесту, найди ключ и введи его сюда, чтобы открыть портал.
                 </p>
+                <a
+                  href={QUEST1_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 w-full justify-center px-6 py-3 rounded-xl font-semibold mb-4 border border-white/15 bg-white/5 hover:bg-white/10 transition text-foreground"
+                >
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
+                  Перейти к квесту
+                </a>
                 <div className="mb-4">
                   <input
                     type="text"
                     value={code}
                     onChange={(e) => { setCode(e.target.value); setError(false); }}
                     onKeyDown={(e) => e.key === 'Enter' && submitCode()}
-                    placeholder="Код квеста"
+                    placeholder="Введите ключ"
                     autoFocus
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-center tracking-[0.3em] font-mono text-lg text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-yellow-400/60 focus:bg-white/10 transition"
                     style={{ boxShadow: error ? '0 0 0 2px hsl(0 80% 60% / 0.6)' : undefined }}
@@ -491,7 +508,7 @@ function LevelDialog({ island, onClose }: { island: Island | null; onClose: (com
                       animate={{ opacity: 1, y: 0 }}
                       className="text-red-400 text-sm mt-2"
                     >
-                      Неверный код. Попробуй ещё раз.
+                      Неверный ключ. Попробуй ещё раз.
                     </motion.p>
                   )}
                 </div>
