@@ -27,45 +27,48 @@
     --accent: 279 100% 57%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 339 100% 62%;
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 142 72% 45%;
-    --success-foreground: 222 47% 6%;
+    --success: 160 100% 50%;
+    --success-foreground: 240 26% 5%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning: 39 100% 55%;
+    --warning-foreground: 240 26% 5%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 14%;
-    --ring: 174 72% 56%;
+    --border: 240 30% 18%;
+    --input: 240 25% 12%;
+    --ring: 187 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Custom colors */
-    --cyan-glow: 174 72% 56%;
-    --purple-glow: 265 70% 60%;
-    --gradient-start: 174 72% 56%;
-    --gradient-end: 265 70% 60%;
-    
+    /* Neon cyberpunk palette */
+    --neon-cyan: 187 100% 50%;
+    --neon-purple: 279 100% 57%;
+    --neon-pink: 339 100% 62%;
+    --cyan-glow: 187 100% 50%;
+    --purple-glow: 279 100% 57%;
+    --gradient-start: 187 100% 50%;
+    --gradient-end: 279 100% 57%;
+
     /* Difficulty colors */
-    --easy: 142 72% 45%;
-    --medium: 38 92% 50%;
-    --hard: 0 72% 51%;
+    --easy: 160 100% 45%;
+    --medium: 39 100% 55%;
+    --hard: 339 100% 62%;
 
     /* Level colors */
-    --level-beginner: 174 72% 56%;
-    --level-reviewer: 265 70% 60%;
-    --level-expert: 38 92% 50%;
+    --level-beginner: 187 100% 50%;
+    --level-reviewer: 279 100% 57%;
+    --level-expert: 339 100% 62%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 174 72% 56%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 14%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 174 72% 56%;
+    --sidebar-background: 240 26% 5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 240 26% 5%;
+    --sidebar-accent: 240 20% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 30% 18%;
+    --sidebar-ring: 187 100% 50%;
   }
 
   .light {
