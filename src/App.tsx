@@ -20,6 +20,7 @@ import Topics from "./pages/Topics";
 import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import Quest from "./pages/Quest";
+import Farewell from "./pages/Farewell";
 
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
