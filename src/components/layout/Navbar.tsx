@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Shield, Calendar, Eye, Map } from 'lucide-react';
+import { Code2, User, Trophy, Menu, X, LogOut, Settings, Shield, Calendar, Eye, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -10,16 +10,9 @@ import { useIsAdmin, useIsAnticheat, useIsStarosta, useIsModerator } from '@/hoo
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
-  { path: '/', label: 'Главная', icon: Home },
-  { path: '/tasks', label: 'Задания', icon: ListTodo },
-  { path: '/review', label: 'Проверка', icon: CheckSquare },
-  { path: '/games', label: 'Игры', icon: Gamepad2 },
-  { path: '/quest', label: 'Квест', icon: Map },
-  { path: '/topics', label: 'Темы', icon: BookOpen },
-  { path: '/users', label: 'Участники', icon: Users },
-  { path: '/messages', label: 'Чаты', icon: MessageSquare },
-  { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
   { path: '/profile', label: 'Профиль', icon: User },
+  { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
+  { path: '/farewell', label: 'Конец', icon: Sun },
 ];
 
 export function Navbar() {
