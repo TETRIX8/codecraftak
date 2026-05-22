@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, User, Trophy, Menu, X, LogOut, Settings, Shield, Calendar, Eye, Sun } from 'lucide-react';
+import { Code2, User, Trophy, Menu, X, LogOut, Settings, Shield, Calendar, Eye, Sun, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 const navItems = [
   { path: '/profile', label: 'Профиль', icon: User },
   { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
+  { path: '/exams', label: 'Допуск', icon: GraduationCap },
   { path: '/farewell', label: 'Конец', icon: Sun },
 ];
 
