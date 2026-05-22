@@ -39,7 +39,7 @@ const App = () => (
         <BrowserRouter>
           <Layout>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Farewell />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
@@ -55,7 +55,7 @@ const App = () => (
               <Route path="/games" element={<Games />} />
               <Route path="/quest" element={<Quest />} />
               <Route path="/farewell" element={<Farewell />} />
-              <Route path="/" element={<Farewell />} />
+
 
               
               <Route path="/anticheat" element={<AnticheatPanel />} />
