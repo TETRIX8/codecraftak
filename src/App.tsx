@@ -21,6 +21,7 @@ import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import Quest from "./pages/Quest";
 import Farewell from "./pages/Farewell";
+import Exams from "./pages/Exams";
 
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
