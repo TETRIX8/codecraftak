@@ -59,7 +59,7 @@ export default function Farewell() {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: badges = [] } = useUserBadges(user?.id);
-  const { data: solutions = [] } = useUserSolutions(user?.id);
+  const { data: solutions = [] } = useUserSolutions();
 
   const stats = useMemo(() => {
     const accepted = solutions.filter((s: any) => s.status === 'accepted').length;
