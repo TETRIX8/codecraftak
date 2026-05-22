@@ -54,6 +54,9 @@ const App = () => (
               <Route path="/topics/:id" element={<TopicDetail />} />
               <Route path="/games" element={<Games />} />
               <Route path="/quest" element={<Quest />} />
+              <Route path="/farewell" element={<Farewell />} />
+              <Route path="/" element={<Farewell />} />
+
               
               <Route path="/anticheat" element={<AnticheatPanel />} />
               <Route path="/starosta" element={<StarostaPanel />} />
