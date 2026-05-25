@@ -20,8 +20,6 @@ import Topics from "./pages/Topics";
 import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import Quest from "./pages/Quest";
-import Farewell from "./pages/Farewell";
-import Exams from "./pages/Exams";
 
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
@@ -40,7 +38,7 @@ const App = () => (
         <BrowserRouter>
           <Layout>
             <Routes>
-              <Route path="/" element={<Farewell />} />
+              <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
@@ -55,10 +53,6 @@ const App = () => (
               <Route path="/topics/:id" element={<TopicDetail />} />
               <Route path="/games" element={<Games />} />
               <Route path="/quest" element={<Quest />} />
-              <Route path="/farewell" element={<Farewell />} />
-              <Route path="/exams" element={<Exams />} />
-
-
               
               <Route path="/anticheat" element={<AnticheatPanel />} />
               <Route path="/starosta" element={<StarostaPanel />} />

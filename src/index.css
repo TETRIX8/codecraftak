@@ -6,67 +6,69 @@
 
 @layer base {
   :root {
-    --background: 25 40% 8%;
-    --foreground: 35 45% 94%;
+    --background: 240 26% 5%;
+    --foreground: 0 0% 98%;
 
-    --card: 22 35% 12%;
-    --card-foreground: 35 45% 94%;
+    --card: 240 25% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 22 35% 12%;
-    --popover-foreground: 35 45% 94%;
+    --popover: 240 25% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 28 95% 62%;
-    --primary-foreground: 25 40% 8%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 240 26% 5%;
 
-    --secondary: 20 30% 16%;
-    --secondary-foreground: 35 45% 94%;
+    --secondary: 240 20% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 20 25% 14%;
-    --muted-foreground: 30 25% 70%;
+    --muted: 240 20% 10%;
+    --muted-foreground: 240 10% 65%;
 
-    --accent: 350 75% 65%;
-    --accent-foreground: 25 40% 8%;
+    --accent: 279 100% 57%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 35 45% 94%;
+    --destructive: 339 100% 62%;
+    --destructive-foreground: 0 0% 98%;
 
-    --success: 140 50% 55%;
-    --success-foreground: 25 40% 8%;
+    --success: 160 100% 50%;
+    --success-foreground: 240 26% 5%;
 
-    --warning: 45 95% 60%;
-    --warning-foreground: 25 40% 8%;
+    --warning: 39 100% 55%;
+    --warning-foreground: 240 26% 5%;
 
-    --border: 25 30% 22%;
-    --input: 22 30% 16%;
-    --ring: 28 95% 62%;
+    --border: 240 30% 18%;
+    --input: 240 25% 12%;
+    --ring: 187 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Nostalgic summer sunset palette */
-    --neon-cyan: 195 60% 65%;
-    --neon-purple: 280 40% 60%;
-    --neon-pink: 350 75% 70%;
-    --cyan-glow: 28 95% 62%;
-    --purple-glow: 350 75% 65%;
-    --gradient-start: 28 95% 62%;
-    --gradient-end: 350 75% 65%;
+    /* Neon cyberpunk palette */
+    --neon-cyan: 187 100% 50%;
+    --neon-purple: 279 100% 57%;
+    --neon-pink: 339 100% 62%;
+    --cyan-glow: 187 100% 50%;
+    --purple-glow: 279 100% 57%;
+    --gradient-start: 187 100% 50%;
+    --gradient-end: 279 100% 57%;
 
-    --easy: 140 50% 55%;
-    --medium: 45 95% 60%;
-    --hard: 0 75% 60%;
+    /* Difficulty colors */
+    --easy: 160 100% 45%;
+    --medium: 39 100% 55%;
+    --hard: 339 100% 62%;
 
-    --level-beginner: 195 60% 65%;
-    --level-reviewer: 28 95% 62%;
-    --level-expert: 350 75% 65%;
+    /* Level colors */
+    --level-beginner: 187 100% 50%;
+    --level-reviewer: 279 100% 57%;
+    --level-expert: 339 100% 62%;
 
-    --sidebar-background: 25 40% 8%;
-    --sidebar-foreground: 35 45% 94%;
-    --sidebar-primary: 28 95% 62%;
-    --sidebar-primary-foreground: 25 40% 8%;
-    --sidebar-accent: 20 30% 16%;
-    --sidebar-accent-foreground: 35 45% 94%;
-    --sidebar-border: 25 30% 22%;
-    --sidebar-ring: 28 95% 62%;
+    --sidebar-background: 240 26% 5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 187 100% 50%;
+    --sidebar-primary-foreground: 240 26% 5%;
+    --sidebar-accent: 240 20% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 30% 18%;
+    --sidebar-ring: 187 100% 50%;
   }
 
   .light {
