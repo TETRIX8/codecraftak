@@ -71,8 +71,7 @@ export function installCdnProxy() {
     ): void {
       const s = typeof url === "string" ? url : url.toString();
       const finalUrl = shouldProxy(s) ? rewrite(s) : s;
-      // @ts-expect-error - overloaded signature
-      super.open(method, finalUrl, async, username, password);
+      super.open(method, finalUrl, async, username ?? null, password ?? null);
     }
   }
   window.XMLHttpRequest = ProxiedXHR as any;
