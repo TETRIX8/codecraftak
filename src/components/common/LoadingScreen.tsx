@@ -539,11 +539,11 @@ export function LoadingScreen({ onComplete, minDuration = 4000 }: LoadingScreenP
         >
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter">
             <GlitchText 
-              text="CODE" 
+              text="MOKSU" 
               className="text-foreground inline-block"
             />
             <span className="bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">
-              CRAFT
+              HUB
             </span>
           </h1>
         </motion.div>

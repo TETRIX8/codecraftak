@@ -380,9 +380,9 @@ export default function Guide() {
                 transition={{ duration: 0.7, delay: 0.1 }}
                 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[0.95] mb-6 text-balance"
               >
-                <span className="text-foreground">Как работает </span>
+                <span className="text-foreground">Как работает MOKSU</span>
                 <span className="bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">
-                  CodeCraft
+                  HUB
                 </span>
               </motion.h1>
 

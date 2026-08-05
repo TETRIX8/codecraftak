@@ -471,9 +471,9 @@ export default function Index() {
                   transition={{ duration: 0.7 }}
                   className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.9] mb-6"
                 >
-                  <span className="text-foreground">CODE</span>
+                  <span className="text-foreground">MOKSU</span>
                   <span className="bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">
-                    CRAFT
+                    HUB
                   </span>
                 </motion.h1>
                 
