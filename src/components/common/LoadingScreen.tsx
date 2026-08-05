@@ -539,11 +539,11 @@ export function LoadingScreen({ onComplete, minDuration = 4000 }: LoadingScreenP
         >
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter">
             <GlitchText 
-              text="CODE" 
+              text="MOKSU" 
               className="text-foreground inline-block"
             />
             <span className="bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">
-              CRAFT
+              HUB
             </span>
           </h1>
         </motion.div>
@@ -680,7 +680,7 @@ export function LoadingScreen({ onComplete, minDuration = 4000 }: LoadingScreenP
         transition={{ delay: 0.5 }}
         className="absolute top-6 left-6 font-mono text-[10px] text-[hsl(var(--neon-cyan))] tracking-wider"
       >
-        <div className="opacity-60">SYS://CODECRAFT</div>
+        <div className="opacity-60">SYS://MOKSUHUB</div>
         <div className="opacity-40">NODE_VER:2.0.26</div>
       </motion.div>
       

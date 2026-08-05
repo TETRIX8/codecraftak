@@ -51,7 +51,7 @@ export function Navbar() {
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-accent opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
             </div>
             <span className="text-xl font-bold hidden sm:block">
-              Code<span className="gradient-text">⚡Craft</span>
+              Moksu<span className="gradient-text">⚡Hub</span>
             </span>
           </Link>
 

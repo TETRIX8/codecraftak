@@ -382,7 +382,7 @@ export default function Guide() {
               >
                 <span className="text-foreground">Как работает </span>
                 <span className="bg-gradient-to-r from-[hsl(var(--neon-cyan))] via-[hsl(var(--neon-purple))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">
-                  CodeCraft
+                  MoksuHub
                 </span>
               </motion.h1>
 
@@ -564,7 +564,7 @@ export default function Guide() {
                   { text: '> Загрузка решения #4821...', color: 'var(--neon-cyan)', d: 0 },
                   { text: '> Язык: Python | Сложность: средняя', color: 'var(--neon-purple)', d: 0.4 },
                   { text: '> Анализ кода...', color: 'var(--neon-cyan)', d: 0.8 },
-                  { text: '> Вердикт: ПРИНЯТО ✓', color: 'var(--neon-pink)', d: 1.2 },
+                  { text: '> Вердикт: ��РИНЯТО ✓', color: 'var(--neon-pink)', d: 1.2 },
                   { text: '> +монеты автору и проверяющему', color: 'var(--neon-cyan)', d: 1.6 },
                 ].map((line, i) => (
                   <motion.div
@@ -717,7 +717,7 @@ export default function Guide() {
                   <h3 className="font-bold uppercase tracking-wider">Достижения и рейтинг</h3>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-4 text-pretty">
-                  За активность открываются ачивки, а таблица лидеров показывает лучших участников.
+                  За активность открываются ачивки, а таблица ли��еров показывает лучших участников.
                   Решай, проверяй, играй — и твоё имя окажется наверху.
                 </p>
                 <div className="space-y-2">
