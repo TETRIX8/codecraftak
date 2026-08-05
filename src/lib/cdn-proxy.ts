@@ -18,6 +18,9 @@ function shouldProxy(url: string): boolean {
     const u = new URL(url, window.location.href);
     if (u.origin === window.location.origin) return false;
     if (SKIP_HOSTS.has(u.hostname)) return false;
+    // Never proxy backend (auth/db/storage/realtime) — CDN breaks these calls
+    if (/supabase\.(co|in)$/.test(u.hostname)) return false;
+    if (u.protocol === "wss:" || u.protocol === "ws:") return false;
     if (!/^https?:$/.test(u.protocol)) return false;
     return true;
   } catch {
