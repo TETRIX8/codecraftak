@@ -1,12 +1,15 @@
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { WelcomePopup } from '@/components/common/WelcomePopup';
 import { BanScreen } from '@/components/common/BanScreen';
 import { PendingApprovalScreen } from '@/components/common/PendingApprovalScreen';
+import { NeonLoader } from '@/components/common/NeonLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
