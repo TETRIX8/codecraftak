@@ -1,12 +1,15 @@
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { WelcomePopup } from '@/components/common/WelcomePopup';
 import { BanScreen } from '@/components/common/BanScreen';
 import { PendingApprovalScreen } from '@/components/common/PendingApprovalScreen';
+import { NeonLoader } from '@/components/common/NeonLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +18,16 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   useRealtimeNotifications();
+  const location = useLocation();
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  useEffect(() => {
+    setRouteLoading(true);
+    const t = setTimeout(() => setRouteLoading(false), 650);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
+
+
 
   const { data: activeBan, isLoading: banLoading } = useQuery({
     queryKey: ['user-ban-check', user?.id],
@@ -51,11 +64,7 @@ export function Layout({ children }: LayoutProps) {
   });
 
   if (user && (banLoading || profileLoading)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <NeonLoader label="СИНХРОНИЗАЦИЯ" />;
   }
 
   if (activeBan) {
@@ -70,9 +79,27 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       <Navbar />
       <WelcomePopup />
-      <main className="pt-16">
+      <AnimatePresence>
+        {routeLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <NeonLoader />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.main
+        key={location.pathname}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="pt-16"
+      >
         {children}
-      </main>
+      </motion.main>
     </div>
   );
 }
