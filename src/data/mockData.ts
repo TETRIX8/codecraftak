@@ -176,8 +176,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     rank: 5,
     user: {
       id: '13',
-      nickname: 'CodeCraft',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=CodeCraft',
+      nickname: 'MoksuHub',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MoksuHub',
       trustRating: 91,
       reviewBalance: 2,
       reviewsCompleted: 98,

@@ -62,7 +62,7 @@ export function usePushNotifications() {
       const notification = new Notification(title, {
         body,
         icon: icon || '/favicon.ico',
-        tag: 'code-craft-notification',
+        tag: 'moksuhub-notification',
       });
 
       notification.onclick = () => {

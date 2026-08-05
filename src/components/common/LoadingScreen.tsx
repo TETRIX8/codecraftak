@@ -680,7 +680,7 @@ export function LoadingScreen({ onComplete, minDuration = 4000 }: LoadingScreenP
         transition={{ delay: 0.5 }}
         className="absolute top-6 left-6 font-mono text-[10px] text-[hsl(var(--neon-cyan))] tracking-wider"
       >
-        <div className="opacity-60">SYS://CODECRAFT</div>
+        <div className="opacity-60">SYS://MOKSUHUB</div>
         <div className="opacity-40">NODE_VER:2.0.26</div>
       </motion.div>
       

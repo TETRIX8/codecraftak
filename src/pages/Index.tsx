@@ -388,13 +388,13 @@ export default function Index() {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const loaded = sessionStorage.getItem('codecraft-loaded');
+    const loaded = sessionStorage.getItem('moksuhub-loaded');
     if (loaded) { setIsLoading(false); setHasLoaded(true); }
   }, []);
 
   const handleLoadingComplete = () => {
     setIsLoading(false); setHasLoaded(true);
-    sessionStorage.setItem('codecraft-loaded', 'true');
+    sessionStorage.setItem('moksuhub-loaded', 'true');
   };
 
   return (
@@ -671,7 +671,7 @@ export default function Index() {
                         System Manual
                       </div>
                       <h2 className="text-xl md:text-2xl font-extrabold uppercase tracking-wide group-hover:text-[hsl(var(--neon-cyan))] transition-colors text-balance">
-                        Как всё устроено? Полный гид по CodeCraft
+                        Как всё устроено? Полный гид по MOKSUHUB
                       </h2>
                       <p className="text-sm text-muted-foreground mt-1 text-pretty">
                         Обучение, задания, проверки, игры на монеты, квест и рейтинги — разбор всей платформы за 3 минуты.
@@ -811,7 +811,7 @@ export default function Index() {
               </h2>
               
               <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto relative">
-                Присоединяйся к экосистеме CodeCraft и прокачивай навыки будущего.
+                Присоединяйся к экосистеме MOKSUHUB и прокачивай навыки будущего.
               </p>
               
               <Link to="/auth">
