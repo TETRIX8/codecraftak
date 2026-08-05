@@ -525,7 +525,7 @@ export default function Index() {
                       />
                     </Button>
                   </Link>
-                  <Link to="/topics">
+                  <Link to="/guide">
                     <Button
                       variant="outline"
                       size="lg"
@@ -535,7 +535,7 @@ export default function Index() {
                       }}
                     >
                       <Terminal className="w-5 h-5 mr-2" />
-                      Узнать больше
+                      Гид по сайту
                     </Button>
                   </Link>
                 </motion.div>
@@ -619,6 +619,78 @@ export default function Index() {
             <StatCard icon={Star} value="4.9" label="Рейтинг" delay={0.2} />
             <StatCard icon={Trophy} value="50+" label="Экспертов" delay={0.3} />
           </div>
+
+          {/* GUIDE BANNER */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-6"
+          >
+            <Link to="/guide">
+              <motion.div whileHover={{ scale: 1.01, y: -3 }} transition={{ type: 'spring', stiffness: 300 }} className="group">
+                <NeonFrame className="p-6 md:p-8 bg-[hsl(var(--card)/0.4)] backdrop-blur-xl overflow-hidden">
+                  {/* Moving scan lines */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {[...Array(3)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.8, ease: 'linear' }}
+                        className="absolute h-[1px] w-40"
+                        style={{
+                          top: `${25 + i * 25}%`,
+                          background: 'linear-gradient(90deg, transparent, hsl(var(--neon-cyan) / 0.6), transparent)',
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          '0 0 20px hsl(var(--neon-cyan) / 0.4)',
+                          '0 0 45px hsl(var(--neon-cyan) / 0.7)',
+                          '0 0 20px hsl(var(--neon-cyan) / 0.4)',
+                        ],
+                        rotate: [0, 3, -3, 0],
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center border border-[hsl(var(--neon-cyan)/0.5)] bg-[hsl(var(--neon-cyan)/0.1)]"
+                    >
+                      <MapIcon
+                        className="w-8 h-8 text-[hsl(var(--neon-cyan))]"
+                        style={{ filter: 'drop-shadow(0 0 10px hsl(var(--neon-cyan) / 0.8))' }}
+                      />
+                    </motion.div>
+
+                    <div className="flex-grow">
+                      <div className="text-xs font-mono uppercase tracking-[0.3em] text-[hsl(var(--neon-cyan))] mb-1">
+                        System Manual
+                      </div>
+                      <h2 className="text-xl md:text-2xl font-extrabold uppercase tracking-wide group-hover:text-[hsl(var(--neon-cyan))] transition-colors text-balance">
+                        Как всё устроено? Полный гид по CodeCraft
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1 text-pretty">
+                        Обучение, задания, проверки, игры на монеты, квест и рейтинги — разбор всей платформы за 3 минуты.
+                      </p>
+                    </div>
+
+                    <motion.div
+                      animate={{ x: [0, 6, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-12 h-12 shrink-0 rounded-xl border-2 border-[hsl(var(--neon-cyan)/0.5)] flex items-center justify-center group-hover:border-[hsl(var(--neon-cyan))] group-hover:bg-[hsl(var(--neon-cyan)/0.1)] transition-all self-end sm:self-auto"
+                      style={{ boxShadow: '0 0 15px hsl(var(--neon-cyan) / 0.3)' }}
+                    >
+                      <ArrowRight className="w-6 h-6 text-[hsl(var(--neon-cyan))]" />
+                    </motion.div>
+                  </div>
+                </NeonFrame>
+              </motion.div>
+            </Link>
+          </motion.div>
 
           {/* DIRECTIONS */}
           <motion.div
