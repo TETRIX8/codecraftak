@@ -16,6 +16,17 @@ APP_URL=https://ваш-домен.ru
 
 ## Деплой
 
+Ошибка `Failed to send a request to the Edge Function` с HTTP 404 означает, что функция ещё не задеплоена в Supabase. Выполните команды из корня проекта после установки Supabase CLI и входа в аккаунт:
+
+```bash
+supabase link --project-ref bzorclzvqmoanzdmumiy
+supabase db push
+supabase secrets set RESEND_API_KEY=\"ВАШ_НОВЫЙ_КЛЮЧ\" RESEND_FROM_EMAIL=\"MOKSUHUB <noreply@ваш-подтверждённый-домен.ru>\" APP_URL=\"https://ваш-домен.ru\"
+supabase functions deploy auth-email --project-ref bzorclzvqmoanzdmumiy --no-verify-jwt
+```
+
+Ключ передавайте только в команду настройки секретов или в защищённую панель Supabase. Не добавляйте его в `.env`, который собирается frontend, и не коммитьте его в GitHub. После деплоя повторите запрос к `/functions/v1/auth-email`.
+
 Сначала примените миграцию `supabase/migrations/20260815103000_add_secure_email_otp.sql`, затем задеплойте функцию `supabase/functions/auth-email/index.ts` и задайте секреты в окружении Supabase.
 
 Поток регистрации вызывает `send_signup_code`, а страница `/auth/verify-email` вызывает `verify_signup_code`. Поток восстановления использует `send_reset_code`, `verify_reset_code` и `reset_password`.
