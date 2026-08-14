@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { frontendCourse, courseStages } from '@/data/frontendCourse';
 
 const CATEGORIES = [
   { value: 'all', label: 'Все', icon: BookOpen, color: 'bg-primary/20 text-primary' },
@@ -144,6 +145,27 @@ export default function Topics() {
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 pb-8 sm:pb-16">
+        {/* Featured learning path */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-purple-500/10 shadow-xl shadow-primary/5"
+        >
+          <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Badge className="gap-1"><Zap className="h-3 w-3" /> Полный маршрут</Badge>
+                <Badge variant="outline">48 часов</Badge>
+                <Badge variant="outline">24 занятия</Badge>
+              </div>
+              <h2 className="text-2xl font-bold sm:text-3xl">{frontendCourse.title}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{frontendCourse.description} Каждая тема содержит аналогию, простое объяснение, код и практическое задание.</p>
+              <div className="mt-4 flex flex-wrap gap-2">{courseStages.map(stage => <span key={stage.name} className="rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">{stage.name} · {stage.hours} ч.</span>)}</div>
+            </div>
+            <Button size="lg" className="gap-2" onClick={() => navigate(`/courses/${frontendCourse.slug}`)}><BookOpen className="h-4 w-4" /> Открыть курс</Button>
+          </div>
+        </motion.div>
+
         {/* Search and Filters */}
         <div className="mb-4 sm:mb-8 space-y-4 sm:space-y-6">
           <div className="relative max-w-md mx-auto">

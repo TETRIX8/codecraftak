@@ -21,6 +21,7 @@ import TopicDetail from "./pages/TopicDetail";
 import Games from "./pages/Games";
 import Quest from "./pages/Quest";
 import Guide from "./pages/Guide";
+import FrontendCourse from "./pages/FrontendCourse";
 
 import AnticheatPanel from "./pages/AnticheatPanel";
 import StarostaPanel from "./pages/StarostaPanel";
@@ -52,6 +53,8 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/topics" element={<Topics />} />
               <Route path="/topics/:id" element={<TopicDetail />} />
+              <Route path="/courses/:slug" element={<FrontendCourse />} />
+              <Route path="/courses/:slug/:lessonId" element={<FrontendCourse />} />
               <Route path="/games" element={<Games />} />
               <Route path="/quest" element={<Quest />} />
               <Route path="/guide" element={<Guide />} />
