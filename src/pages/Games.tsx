@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useGames, GameType, Game } from '@/hooks/useGames';
@@ -403,6 +403,18 @@ export default function Games() {
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
               />
+              <GameTypeCard
+                type="connect-four"
+                title="Четыре в ряд"
+                description="Соберите четыре фишки подряд"
+                icon={<div className="grid grid-cols-2 gap-1"><Circle className="h-4 w-4 text-red-500" /><Circle className="h-4 w-4 text-yellow-500" /><Circle className="h-4 w-4 text-yellow-500" /><Circle className="h-4 w-4 text-red-500" /></div>}
+                balance={balance}
+                minBet={MIN_BET}
+                maxBet={MAX_BET}
+                isLoading={isLoading}
+                cooldownActive={cooldownRemaining > 0}
+                onCreate={handleCreateGame}
+              />
             </div>
           </TabsContent>
 
@@ -426,6 +438,7 @@ export default function Games() {
                           {game.game_type === 'rock-paper-scissors' && <Hand className="h-5 w-5 text-primary" />}
                           {game.game_type === 'battleship' && <Ship className="h-5 w-5 text-primary" />}
                           {game.game_type === 'russian-roulette' && <Target className="h-5 w-5 text-primary" />}
+                          {game.game_type === 'connect-four' && <Circle className="h-5 w-5 text-primary" />}
                         </div>
                         <div>
                           <p className="font-medium">{GAME_NAMES[game.game_type]}</p>
@@ -681,6 +694,14 @@ function GameView({
                 onMove={onMove}
               />
             )}
+
+            {game.game_type === 'connect-four' && (
+              <ConnectFourBoard
+                game={game}
+                userId={userId}
+                onMove={onMove}
+              />
+            )}
           </>
         )}
       </motion.div>
@@ -758,6 +779,71 @@ function TicTacToeBoard({
           description={`Вы уверены, что хотите поставить ${mySymbol} в эту клетку?`}
           confirmText="Сделать ход"
           onConfirm={handleConfirmMove}
+          delay={1}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ConnectFourBoard({
+  game,
+  userId,
+  onMove
+}: {
+  game: Game;
+  userId: string;
+  onMove: (gameId: string, move: Record<string, unknown>) => Promise<boolean>;
+}) {
+  const gameState = game.game_state as { board?: (string | null)[]; symbols?: Record<string, string> };
+  const board = gameState.board || Array(42).fill(null);
+  const symbol = gameState.symbols?.[userId] || 'R';
+  const isMyTurn = game.current_turn === userId;
+  const [pendingColumn, setPendingColumn] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const chooseColumn = (column: number) => {
+    if (!isMyTurn || board[column] !== null) return;
+    if (board[column] !== null) return;
+    setPendingColumn(column);
+    setConfirmOpen(true);
+  };
+
+  const confirmMove = async () => {
+    if (pendingColumn === null) return;
+    await onMove(game.id, { column: pendingColumn });
+    setPendingColumn(null);
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6 space-y-4">
+        <div className="flex justify-center gap-4 text-sm">
+          <Badge variant="outline">Ваша фишка: <span className="ml-1 font-bold">{symbol === 'R' ? 'красная' : 'жёлтая'}</span></Badge>
+          <Badge variant={isMyTurn ? 'default' : 'secondary'}>{isMyTurn ? 'Ваш ход' : 'Ход соперника'}</Badge>
+        </div>
+        <div className="grid grid-cols-7 gap-1 max-w-[350px] mx-auto rounded-xl bg-blue-700 p-2">
+          {board.map((cell, index) => (
+            <motion.button
+              key={index}
+              whileTap={isMyTurn ? { scale: 0.9 } : {}}
+              onClick={() => chooseColumn(index % 7)}
+              disabled={!isMyTurn || board[index % 7] !== null && index < 7}
+              className="aspect-square rounded-full bg-background/90 flex items-center justify-center"
+              aria-label={`Колонка ${(index % 7) + 1}, строка ${Math.floor(index / 7) + 1}`}
+            >
+              {cell && <Circle className={`h-8 w-8 fill-current ${cell === 'R' ? 'text-red-500' : 'text-yellow-400'}`} />}
+            </motion.button>
+          ))}
+        </div>
+        <p className="text-center text-sm text-muted-foreground">Нажмите на любую клетку нужной колонки.</p>
+        <GameActionConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Подтвердите ход"
+          description={`Поставить фишку в колонку ${(pendingColumn ?? 0) + 1}?`}
+          confirmText="Поставить фишку"
+          onConfirm={confirmMove}
           delay={1}
         />
       </CardContent>
@@ -873,8 +959,8 @@ function BattleshipBoard({
   const isReady = gameState.ready?.[userId] || false;
   const myShips = gameState.ships?.[userId] || [];
   const opponentId = game.creator_id === userId ? game.opponent_id : game.creator_id;
-  const myShots = gameState.shots?.[userId] || [];
-  const opponentShots = opponentId ? gameState.shots?.[opponentId] || [] : [];
+  const myShots = useMemo(() => gameState.shots?.[userId] || [], [gameState.shots, userId]);
+  const opponentShots = useMemo(() => opponentId ? gameState.shots?.[opponentId] || [] : [], [gameState.shots, opponentId]);
   const opponentShips = opponentId ? gameState.ships?.[opponentId] || [] : [];
   const opponentAllCells = opponentShips.flat();
   const myShipCells = myShips.flat();

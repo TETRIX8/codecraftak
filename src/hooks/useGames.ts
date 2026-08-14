@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
-export type GameType = 'tic-tac-toe' | 'rock-paper-scissors' | 'battleship' | 'russian-roulette';
+export type GameType = 'tic-tac-toe' | 'rock-paper-scissors' | 'battleship' | 'russian-roulette' | 'connect-four';
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 
 export interface Game {
@@ -44,7 +44,8 @@ const GAME_NAMES: Record<GameType, string> = {
   'tic-tac-toe': 'Крестики-нолики',
   'rock-paper-scissors': 'Камень-ножницы-бумага',
   'battleship': 'Морской бой',
-  'russian-roulette': 'Русская рулетка'
+  'russian-roulette': 'Русская рулетка',
+  'connect-four': 'Четыре в ряд'
 };
 
 const MIN_BET = 1;
@@ -70,7 +71,6 @@ export function useGames() {
   const [currentGame, setCurrentGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastGameCreatedAt, setLastGameCreatedAt] = useState<number | null>(null);
-  const [pendingAction, setPendingAction] = useState<{ type: string; data: any } | null>(null);
   
   // Load last game creation time from localStorage
   useEffect(() => {
@@ -299,6 +299,11 @@ export function useGames() {
           pulls: [],
           currentPlayer: user.id
         };
+      } else if (gameType === 'connect-four') {
+        initialState = {
+          board: Array(42).fill(null),
+          symbols: { [user.id]: 'R' }
+        };
       }
 
       const { data, error } = await supabase
@@ -348,11 +353,6 @@ export function useGames() {
       return null;
     }
 
-    if (currentBalance < gameBetAmount) {
-      toast.error('Недостаточно баллов для игры');
-      return null;
-    }
-
     setIsLoading(true);
 
     try {
@@ -380,6 +380,11 @@ export function useGames() {
 
       if (game.opponent_id) {
         toast.error('В этой игре уже есть соперник');
+        return null;
+      }
+
+      if (currentBalance < game.bet_amount) {
+        toast.error('Недостаточно баллов для игры');
         return null;
       }
 
@@ -417,9 +422,13 @@ export function useGames() {
           ships: { ...ships, [user.id]: [] } as Record<string, Json>,
           ready: { ...ready, [user.id]: false }
         };
-      } else if (game.game_type === 'russian-roulette') {
+      } else if (game.game_type === 'russian-roulette' || game.game_type === 'connect-four') {
         // Keep existing state, just add opponent
         updatedState = gameState;
+        if (game.game_type === 'connect-four') {
+          const symbols = (gameState.symbols as Record<string, string>) || {};
+          updatedState = { ...gameState, symbols: { ...symbols, [user.id]: 'Y' } };
+        }
       }
 
       const { data: updatedGame, error } = await supabase
@@ -476,6 +485,16 @@ export function useGames() {
         return false;
       }
 
+      const isParticipant = game.creator_id === user.id || game.opponent_id === user.id;
+      if (!isParticipant || game.status !== 'playing') {
+        toast.error('Вы не можете сделать ход в этой игре');
+        return false;
+      }
+      if (game.current_turn !== user.id) {
+        toast.error('Сейчас ход соперника');
+        return false;
+      }
+
       const gameState = (game.game_state as Record<string, unknown>) || {};
       let newState: Json = JSON.parse(JSON.stringify(gameState));
       let nextTurn = game.current_turn;
@@ -486,6 +505,10 @@ export function useGames() {
         const board = [...((gameState.board as (string | null)[]) || Array(9).fill(null))];
         const position = move.position as number;
         const symbols = (gameState.symbols as Record<string, string>) || {};
+        if (!Number.isInteger(position) || position < 0 || position >= board.length || !symbols[user.id]) {
+          toast.error('Некорректный ход');
+          return false;
+        }
         
         if (board[position] !== null) {
           toast.error('Эта клетка уже занята');
@@ -508,7 +531,12 @@ export function useGames() {
         }
       } else if (game.game_type === 'rock-paper-scissors') {
         const choices = { ...((gameState.choices as Record<string, string>) || {}) };
-        choices[user.id] = move.choice as string;
+        const choice = move.choice as string;
+        if (!['rock', 'paper', 'scissors'].includes(choice) || choices[user.id]) {
+          toast.error('Некорректный или повторный выбор');
+          return false;
+        }
+        choices[user.id] = choice;
         newState = { ...gameState, choices } as Json;
 
         // Check if both players made a choice
@@ -527,18 +555,18 @@ export function useGames() {
           const ships = { ...((gameState.ships as Record<string, number[][]>) || {}) };
           const ready = { ...((gameState.ready as Record<string, boolean>) || {}) };
           
-          ships[user.id] = move.ships as number[][];
+          const submittedShips = move.ships as number[][];
+          if (!isValidBattleshipFleet(submittedShips)) {
+            toast.error('Некорректная расстановка кораблей');
+            return false;
+          }
+          ships[user.id] = submittedShips;
           ready[user.id] = true;
           
           // Check if both players placed ships
           if (ready[game.creator_id] && ready[game.opponent_id]) {
-            newState = { 
-              ...gameState, 
-              ships, 
-              ready, 
-              phase: 'battle',
-              currentTurn: game.creator_id 
-            } as Json;
+                      newState = { ...gameState, ships, ready, phase: 'battle',
+              currentTurn: game.creator_id } as Json;
             nextTurn = game.creator_id;
           } else {
             newState = { ...gameState, ships, ready } as Json;
@@ -551,7 +579,15 @@ export function useGames() {
           ] || [];
           
           const shotPosition = move.position as number;
+          if (!Number.isInteger(shotPosition) || shotPosition < 0 || shotPosition >= 100) {
+            toast.error('Некорректная клетка');
+            return false;
+          }
           if (!shots[user.id]) shots[user.id] = [];
+          if (shots[user.id].includes(shotPosition)) {
+            toast.error('Вы уже стреляли в эту клетку');
+            return false;
+          }
           shots[user.id].push(shotPosition);
           
           // Check if hit any ship
@@ -567,6 +603,30 @@ export function useGames() {
           
           newState = { ...gameState, shots, lastShot: { player: user.id, position: shotPosition, hit: isHit } } as Json;
           nextTurn = user.id === game.creator_id ? game.opponent_id : game.creator_id;
+        }
+      } else if (game.game_type === 'connect-four' && game.opponent_id) {
+        const board = [...((gameState.board as (string | null)[]) || Array(42).fill(null))];
+        const column = move.column as number;
+        const symbols = (gameState.symbols as Record<string, string>) || {};
+        if (!Number.isInteger(column) || column < 0 || column >= 7 || !symbols[user.id]) {
+          toast.error('Некорректная колонка');
+          return false;
+        }
+        let position = -1;
+        for (let row = 5; row >= 0; row -= 1) {
+          const index = row * 7 + column;
+          if (board[index] === null) { position = index; break; }
+        }
+        if (position === -1) { toast.error('Колонка заполнена'); return false; }
+        board[position] = symbols[user.id];
+        newState = { ...gameState, board } as Json;
+        if (checkConnectFourWinner(board, symbols[user.id])) {
+          winnerId = user.id;
+          status = 'finished';
+        } else if (board.every(cell => cell !== null)) {
+          status = 'finished';
+        } else {
+          nextTurn = game.creator_id === user.id ? game.opponent_id : game.creator_id;
         }
       } else if (game.game_type === 'russian-roulette' && game.opponent_id) {
         const chamber = (gameState.chamber as number) || 0;
@@ -589,7 +649,7 @@ export function useGames() {
         }
       }
 
-      const { error } = await supabase
+      const { data: updatedRows, error } = await supabase
         .from('games')
         .update({
           game_state: newState,
@@ -597,13 +657,20 @@ export function useGames() {
           status,
           winner_id: winnerId
         })
-        .eq('id', gameId);
+        .eq('id', gameId)
+        .eq('status', 'playing')
+        .eq('current_turn', user.id)
+        .select('id');
 
       if (error) throw error;
+      if (!updatedRows || updatedRows.length === 0) {
+        toast.error('Ход уже принят или очередь изменилась');
+        return false;
+      }
 
       // If game finished, award winner
       if (status === 'finished' && winnerId) {
-        await awardWinner(winnerId, gameId);
+        await awardWinner(winnerId, gameId, game.bet_amount);
       } else if (status === 'finished' && !winnerId && game.opponent_id) {
         // Draw - return bets
         await returnBets(game.creator_id, game.opponent_id, game.bet_amount, gameId);
@@ -618,9 +685,9 @@ export function useGames() {
     }
   }
 
-  async function awardWinner(winnerId: string, gameId: string) {
+  async function awardWinner(winnerId: string, gameId: string, betAmount: number) {
     // Use database function for atomic award
-    const winReward = currentGame?.bet_amount ? currentGame.bet_amount * 2 : 2;
+    const winReward = betAmount * 2;
     
     const { error } = await supabase.rpc('award_game_winner', {
       _winner_id: winnerId,
@@ -663,21 +730,14 @@ export function useGames() {
         .single();
 
       if (game && game.creator_id === user.id) {
-        // Return bet to creator
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('review_balance')
-          .eq('id', user.id)
-          .single();
+        const { error: refundError } = await supabase.rpc('refund_game_bet', {
+          _user_id: user.id,
+          _game_id: gameId,
+          _bet_amount: game.bet_amount
+        });
+        if (refundError) throw refundError;
 
-        if (profile) {
-          await supabase
-            .from('profiles')
-            .update({ review_balance: (profile.review_balance || 0) + game.bet_amount })
-            .eq('id', user.id);
-        }
-
-        await supabase.from('games').delete().eq('id', gameId);
+        await supabase.from('games').delete().eq('id', gameId).eq('status', 'waiting');
         
         // Clear current game if it was this one
         if (currentGame?.id === gameId) {
@@ -733,6 +793,25 @@ function checkTicTacToeWinner(board: (string | null)[]): string | null {
   return null;
 }
 
+function isValidBattleshipFleet(ships: number[][]): boolean {
+  const expectedSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+  if (!Array.isArray(ships) || ships.length !== expectedSizes.length) return false;
+  const cells = new Set<number>();
+  return ships.every((ship, index) => {
+    if (!Array.isArray(ship) || ship.length !== expectedSizes[index]) return false;
+    if (ship.some(cell => !Number.isInteger(cell) || cell < 0 || cell >= 100 || cells.has(cell))) return false;
+    ship.forEach(cell => cells.add(cell));
+    if (ship.length === 1) return true;
+    const rows = ship.map(cell => Math.floor(cell / 10));
+    const cols = ship.map(cell => cell % 10);
+    const sameRow = rows.every(row => row === rows[0]);
+    const sameCol = cols.every(col => col === cols[0]);
+    if (!sameRow && !sameCol) return false;
+    const ordered = [...(sameRow ? cols : rows)].sort((a, b) => a - b);
+    return ordered.every((value, i) => i === 0 || value === ordered[i - 1] + 1);
+  });
+}
+
 function determineRPSWinner(
   creatorChoice: string, 
   opponentChoice: string, 
@@ -748,6 +827,25 @@ function determineRPSWinner(
   };
   
   return wins[creatorChoice] === opponentChoice ? creatorId : opponentId;
+}
+
+function checkConnectFourWinner(board: (string | null)[], symbol: string): boolean {
+  const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+  for (let row = 0; row < 6; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      for (const [dr, dc] of directions) {
+        let count = 0;
+        for (let step = 0; step < 4; step += 1) {
+          const r = row + dr * step;
+          const c = col + dc * step;
+          if (r < 0 || r >= 6 || c < 0 || c >= 7 || board[r * 7 + c] !== symbol) break;
+          count += 1;
+        }
+        if (count === 4) return true;
+      }
+    }
+  }
+  return false;
 }
 
 

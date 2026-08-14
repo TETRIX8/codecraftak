@@ -40,7 +40,8 @@ const GAME_NAMES: Record<string, string> = {
   'tic-tac-toe': 'Крестики-нолики',
   'rock-paper-scissors': 'Камень-ножницы-бумага',
   'battleship': 'Морской бой',
-  'russian-roulette': 'Русская рулетка'
+  'russian-roulette': 'Русская рулетка',
+  'connect-four': 'Четыре в ряд'
 };
 
 export function GameInviteCard({ 
@@ -63,6 +64,8 @@ export function GameInviteCard({
         return <Ship className="h-5 w-5" />;
       case 'russian-roulette':
         return <Target className="h-5 w-5" />;
+      case 'connect-four':
+        return <Circle className="h-5 w-5" />;
       default:
         return null;
     }
