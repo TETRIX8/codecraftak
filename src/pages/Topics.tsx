@@ -16,7 +16,8 @@ import {
   Puzzle,
   Zap,
   FileCode,
-  Terminal
+  Terminal,
+  Sparkles
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
