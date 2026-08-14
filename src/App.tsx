@@ -12,8 +12,6 @@ import Review from "./pages/Review";
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
-import EmailVerification from "./pages/EmailVerification";
-import ForgotPassword from "./pages/ForgotPassword";
 import Admin from "./pages/Admin";
 import Users from "./pages/Users";
 import UserProfile from "./pages/UserProfile";
@@ -44,8 +42,6 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/verify-email" element={<EmailVerification />} />
-              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
               <Route path="/review" element={<Review />} />
