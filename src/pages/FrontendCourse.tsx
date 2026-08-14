@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { courseStages, frontendCourse, type CourseStage } from '@/data/frontendCourse';
 import { javascriptRoadmapCourse, javascriptRoadmapStages } from '@/data/javascriptRoadmapCourse';
+import { javascript118Course, javascript118Stages } from '@/data/javascript118Course';
 
 const STORAGE_KEY = 'frontend-course-progress-v1';
 
@@ -31,8 +32,9 @@ export default function FrontendCourse() {
   const { slug, lessonId } = useParams<{ slug?: string; lessonId?: string }>();
   const [completed, setCompleted] = useState<string[]>(readProgress);
   const isJavascriptRoadmap = slug === javascriptRoadmapCourse.slug;
-  const activeCourse = isJavascriptRoadmap ? javascriptRoadmapCourse : frontendCourse;
-  const activeStages = isJavascriptRoadmap ? javascriptRoadmapStages : courseStages;
+  const isJavascript118 = slug === javascript118Course.slug;
+  const activeCourse = isJavascript118 ? javascript118Course : isJavascriptRoadmap ? javascriptRoadmapCourse : frontendCourse;
+  const activeStages = isJavascript118 ? javascript118Stages : isJavascriptRoadmap ? javascriptRoadmapStages : courseStages;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));

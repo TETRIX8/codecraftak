@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { frontendCourse, courseStages } from '@/data/frontendCourse';
 import { javascriptRoadmapCourse, javascriptRoadmapStages } from '@/data/javascriptRoadmapCourse';
+import { javascript118Course, javascript118Stages } from '@/data/javascript118Course';
 
 const CATEGORIES = [
   { value: 'all', label: 'Все', icon: BookOpen, color: 'bg-primary/20 text-primary' },
@@ -180,6 +181,22 @@ export default function Topics() {
               <div className="mt-4 flex flex-wrap gap-2">{javascriptRoadmapStages.map(stage => <span key={stage.name} className="rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">{stage.name} · {stage.hours} ч.</span>)}</div>
             </div>
             <Button size="lg" variant="outline" className="gap-2 border-yellow-500/40 hover:bg-yellow-500/10" onClick={() => navigate(`/courses/${javascriptRoadmapCourse.slug}`)}><FileCode className="h-4 w-4" /> Открыть JavaScript</Button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/20 via-card/80 to-blue-500/10 shadow-xl shadow-primary/5"
+        >
+          <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="mb-3 flex flex-wrap items-center gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Полная программа</Badge><Badge variant="outline">{javascript118Course.totalHours} часов</Badge><Badge variant="outline">{javascript118Course.lessons.length} уроков</Badge></div>
+              <h2 className="text-2xl font-bold sm:text-3xl">{javascript118Course.title}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{javascript118Course.description} Каждый урок посвящён одной цели и заканчивается практикой, вопросами и самостоятельным заданием.</p>
+              <div className="mt-4 flex flex-wrap gap-2">{javascript118Stages.slice(0, 6).map(stage => <span key={stage.name} className="rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">{stage.name} · {stage.hours} ч.</span>)}</div>
+            </div>
+            <Button size="lg" className="gap-2" onClick={() => navigate(`/courses/${javascript118Course.slug}`)}><BookOpen className="h-4 w-4" /> Открыть курс 118 часов</Button>
           </div>
         </motion.div>
 
