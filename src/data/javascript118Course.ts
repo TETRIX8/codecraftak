@@ -1,4 +1,4 @@
-import type { CourseStage, FrontendLesson } from './frontendCourse';
+import type { CourseStage, FrontendLesson } from './courseTypes';
 
 type LessonSeed = {
   section: string;
