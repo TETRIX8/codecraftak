@@ -25,7 +25,17 @@ supabase secrets set RESEND_API_KEY=\"ВАШ_НОВЫЙ_КЛЮЧ\" RESEND_FROM_E
 supabase functions deploy auth-email --project-ref bzorclzvqmoanzdmumiy --no-verify-jwt
 ```
 
-Ключ передавайте только в команду настройки секретов или в защищённую панель Supabase. Не добавляйте его в `.env`, который собирается frontend, и не коммитьте его в GitHub. После деплоя повторите запрос к `/functions/v1/auth-email`.
+Для Vercel добавьте в Project Settings → Environment Variables только серверные переменные без префикса `VITE_`:
+
+```env
+RESEND_API_KEY=ВАШ_НОВЫЙ_КЛЮЧ
+RESEND_FROM_EMAIL=MOKSUHUB <noreply@ваш-подтверждённый-домен.ru>
+SUPABASE_URL=https://bzorclzvqmoanzdmumiy.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=ваш-серверный-service-role-ключ
+APP_URL=https://ваш-домен.ru
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` также нельзя помещать во frontend. После redeploy Vercel будет обслуживать `/api/auth-email`. Ключ Resend и service-role передавайте только через защищённые настройки Vercel или Supabase, не через GitHub.
 
 Сначала примените миграцию `supabase/migrations/20260815103000_add_secure_email_otp.sql`, затем задеплойте функцию `supabase/functions/auth-email/index.ts` и задайте секреты в окружении Supabase.
 
