@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { courseStages, frontendCourse, type CourseStage } from '@/data/frontendCourse';
+import { javascriptRoadmapCourse, javascriptRoadmapStages } from '@/data/javascriptRoadmapCourse';
 
 const STORAGE_KEY = 'frontend-course-progress-v1';
 
@@ -27,39 +28,42 @@ function readProgress(): string[] {
 
 export default function FrontendCourse() {
   const navigate = useNavigate();
-  const { lessonId } = useParams<{ lessonId?: string }>();
+  const { slug, lessonId } = useParams<{ slug?: string; lessonId?: string }>();
   const [completed, setCompleted] = useState<string[]>(readProgress);
+  const isJavascriptRoadmap = slug === javascriptRoadmapCourse.slug;
+  const activeCourse = isJavascriptRoadmap ? javascriptRoadmapCourse : frontendCourse;
+  const activeStages = isJavascriptRoadmap ? javascriptRoadmapStages : courseStages;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
   }, [completed]);
 
   const selectedLesson = useMemo(
-    () => frontendCourse.lessons.find(item => item.id === lessonId),
-    [lessonId],
+    () => activeCourse.lessons.find(item => item.id === lessonId),
+    [activeCourse, lessonId],
   );
-  const progress = Math.round((completed.length / frontendCourse.lessons.length) * 100);
+  const progress = Math.round((completed.length / activeCourse.lessons.length) * 100);
 
   const toggleCompleted = (id: string) => {
     setCompleted(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
   };
 
-  const openLesson = (id: string) => navigate(`/courses/${frontendCourse.slug}/${id}`);
+  const openLesson = (id: string) => navigate(`/courses/${activeCourse.slug}/${id}`);
 
   if (selectedLesson) {
-    const lessonIndex = frontendCourse.lessons.findIndex(item => item.id === selectedLesson.id);
-    const nextLesson = frontendCourse.lessons[lessonIndex + 1];
+    const lessonIndex = activeCourse.lessons.findIndex(item => item.id === selectedLesson.id);
+    const nextLesson = activeCourse.lessons[lessonIndex + 1];
     return (
       <div className="min-h-screen w-full min-w-0 overflow-x-clip pb-16">
         <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-primary/15 via-background to-accent/10">
           <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10">
-            <Button variant="ghost" onClick={() => navigate(`/courses/${frontendCourse.slug}`)} className="mb-6 -ml-2">
+            <Button variant="ghost" onClick={() => navigate(`/courses/${activeCourse.slug}`)} className="mb-6 -ml-2">
               <ArrowLeft className="mr-2 h-4 w-4" /> К курсу
             </Button>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <Badge className={stageClasses[selectedLesson.stage]} variant="outline">{selectedLesson.stage}</Badge>
               <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" /> {selectedLesson.duration}</Badge>
-              <span className="text-sm text-muted-foreground">Занятие {selectedLesson.number} из {frontendCourse.lessons.length}</span>
+              <span className="text-sm text-muted-foreground">Занятие {selectedLesson.number} из {activeCourse.lessons.length}</span>
             </div>
             <h1 className="max-w-3xl break-words text-3xl font-bold leading-tight tracking-tight sm:text-5xl">{selectedLesson.title}</h1>
             <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">{selectedLesson.goal}</p>
@@ -82,13 +86,13 @@ export default function FrontendCourse() {
               <Button onClick={() => toggleCompleted(selectedLesson.id)} variant={completed.includes(selectedLesson.id) ? 'secondary' : 'default'} className="gap-2">
                 <Check className="h-4 w-4" /> {completed.includes(selectedLesson.id) ? 'Занятие пройдено' : 'Отметить как пройденное'}
               </Button>
-              {nextLesson ? <Button variant="outline" onClick={() => openLesson(nextLesson.id)}>Следующее занятие <ChevronRight className="ml-2 h-4 w-4" /></Button> : <Button variant="outline" onClick={() => navigate(`/courses/${frontendCourse.slug}`)}>Завершить курс</Button>}
+              {nextLesson ? <Button variant="outline" onClick={() => openLesson(nextLesson.id)}>Следующее занятие <ChevronRight className="ml-2 h-4 w-4" /></Button> : <Button variant="outline" onClick={() => navigate(`/courses/${activeCourse.slug}`)}>Завершить курс</Button>}
             </div>
           </article>
           <aside className="lg:sticky lg:top-6 lg:self-start">
             <Card className="border-border/50 bg-card/70">
               <CardHeader><CardTitle className="text-base">Прогресс курса</CardTitle></CardHeader>
-              <CardContent><div className="flex items-end justify-between"><span className="text-3xl font-bold">{progress}%</span><span className="text-sm text-muted-foreground">{completed.length}/{frontendCourse.lessons.length}</span></div><Progress value={progress} className="mt-3" /><div className="mt-5 space-y-2">{frontendCourse.lessons.map(item => <button key={item.id} onClick={() => openLesson(item.id)} className={`flex w-full items-center gap-2 rounded-lg p-2 text-left text-xs transition-colors hover:bg-muted ${item.id === selectedLesson.id ? 'bg-primary/10 text-primary' : ''}`}><span className="w-5 text-muted-foreground">{item.number}</span><span className="min-w-0 flex-1 truncate">{item.title}</span>{completed.includes(item.id) && <Check className="h-3.5 w-3.5 text-green-400" />}</button>)}</div></CardContent>
+              <CardContent><div className="flex items-end justify-between"><span className="text-3xl font-bold">{progress}%</span><span className="text-sm text-muted-foreground">{completed.length}/{activeCourse.lessons.length}</span></div><Progress value={progress} className="mt-3" /><div className="mt-5 space-y-2">{activeCourse.lessons.map(item => <button key={item.id} onClick={() => openLesson(item.id)} className={`flex w-full items-center gap-2 rounded-lg p-2 text-left text-xs transition-colors hover:bg-muted ${item.id === selectedLesson.id ? 'bg-primary/10 text-primary' : ''}`}><span className="w-5 text-muted-foreground">{item.number}</span><span className="min-w-0 flex-1 truncate">{item.title}</span>{completed.includes(item.id) && <Check className="h-3.5 w-3.5 text-green-400" />}</button>)}</div></CardContent>
             </Card>
           </aside>
         </main>
@@ -103,15 +107,15 @@ export default function FrontendCourse() {
         <div className="container relative mx-auto max-w-6xl px-4 py-10 sm:py-16">
           <Button variant="ghost" onClick={() => navigate('/topics')} className="mb-8 -ml-2"><ArrowLeft className="mr-2 h-4 w-4" /> Все темы</Button>
           <div className="grid min-w-0 items-end gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0"><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Авторский маршрут</Badge><Badge variant="outline">48 часов</Badge><Badge variant="outline">24 занятия</Badge></div><h1 className="max-w-3xl break-words text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">{frontendCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{frontendCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(frontendCourse.lessons[Math.min(completed.length, frontendCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
-            <Card className="border-primary/20 bg-background/50 backdrop-blur"><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Ваш прогресс</p><p className="mt-1 text-4xl font-bold">{progress}%</p></div><div className="rounded-2xl bg-primary/10 p-4 text-primary"><Code2 className="h-8 w-8" /></div></div><Progress value={progress} className="mt-5" /><p className="mt-3 text-sm text-muted-foreground">{completed.length} из {frontendCourse.lessons.length} занятий отмечено</p></CardContent></Card>
+            <div className="min-w-0"><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Авторский маршрут</Badge><Badge variant="outline">{activeCourse.totalHours} часов</Badge><Badge variant="outline">{activeCourse.lessons.length} занятий</Badge></div><h1 className="max-w-3xl break-words text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">{activeCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{activeCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(activeCourse.lessons[Math.min(completed.length, activeCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
+            <Card className="border-primary/20 bg-background/50 backdrop-blur"><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Ваш прогресс</p><p className="mt-1 text-4xl font-bold">{progress}%</p></div><div className="rounded-2xl bg-primary/10 p-4 text-primary"><Code2 className="h-8 w-8" /></div></div><Progress value={progress} className="mt-5" /><p className="mt-3 text-sm text-muted-foreground">{completed.length} из {activeCourse.lessons.length} занятий отмечено</p></CardContent></Card>
           </div>
         </div>
       </section>
       <main className="container mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-3 py-8 sm:px-4 sm:py-10">
-        <div className="grid gap-4 md:grid-cols-3">{courseStages.map(stage => <Card key={stage.name} className="border-border/50 bg-card/60"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="font-semibold">{stage.name}</span><Badge variant="outline">{stage.hours} ч.</Badge></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{stage.description}</p><p className="mt-4 text-xs text-muted-foreground">Занятия {stage.lessons}</p></CardContent></Card>)}</div>
+        <div className="grid gap-4 md:grid-cols-3">{activeStages.map(stage => <Card key={stage.name} className="border-border/50 bg-card/60"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="font-semibold">{stage.name}</span><Badge variant="outline">{stage.hours} ч.</Badge></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{stage.description}</p><p className="mt-4 text-xs text-muted-foreground">Занятия {stage.lessons}</p></CardContent></Card>)}</div>
         <div className="mb-6 mt-12 flex items-end justify-between"><div><p className="text-sm font-medium uppercase tracking-widest text-primary">Учебная карта</p><h2 className="mt-2 text-3xl font-bold">Все занятия по порядку</h2></div><Layers3 className="hidden h-8 w-8 text-muted-foreground sm:block" /></div>
-        <div className="grid gap-4 md:grid-cols-2">{frontendCourse.lessons.map(item => <motion.button key={item.id} whileHover={{ y: -3 }} onClick={() => openLesson(item.id)} className="text-left"><Card className="h-full border-border/50 bg-card/60 transition-colors hover:border-primary/40"><CardContent className="flex gap-4 p-5"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold ${stageClasses[item.stage]}`}>{String(item.number).padStart(2, '0')}</div><div className="min-w-0 flex-1"><div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className={stageClasses[item.stage]}>{item.stage}</Badge><span className="text-xs text-muted-foreground">{item.duration}</span>{completed.includes(item.id) && <Check className="ml-auto h-4 w-4 text-green-400" />}</div><h3 className="font-semibold leading-6">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.goal}</p></div><ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" /></CardContent></Card></motion.button>)}</div>
+        <div className="grid gap-4 md:grid-cols-2">{activeCourse.lessons.map(item => <motion.button key={item.id} whileHover={{ y: -3 }} onClick={() => openLesson(item.id)} className="text-left"><Card className="h-full border-border/50 bg-card/60 transition-colors hover:border-primary/40"><CardContent className="flex gap-4 p-5"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold ${stageClasses[item.stage]}`}>{String(item.number).padStart(2, '0')}</div><div className="min-w-0 flex-1"><div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className={stageClasses[item.stage]}>{item.stage}</Badge><span className="text-xs text-muted-foreground">{item.duration}</span>{completed.includes(item.id) && <Check className="ml-auto h-4 w-4 text-green-400" />}</div><h3 className="font-semibold leading-6">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.goal}</p></div><ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" /></CardContent></Card></motion.button>)}</div>
         <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8"><div className="flex items-start gap-4"><BookOpen className="mt-1 h-6 w-6 shrink-0 text-primary" /><div><h2 className="text-xl font-bold">Как проходить курс</h2><p className="mt-2 max-w-3xl leading-7 text-muted-foreground">На каждое занятие закладывайте примерно два часа: 35 минут на объяснение, 25 минут на разбор примеров, 50 минут на практику и 10 минут на повторение. Не переходите дальше, пока не сможете объяснить тему своими словами и изменить пример самостоятельно.</p></div></div></div>
       </main>
     </div>
