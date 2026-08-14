@@ -5,7 +5,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { 
   Plus, Edit2, Trash2, Loader2, ArrowLeft, Shield, Users, Bell, 
   BookOpen, Star, Image, Code2, Scale, UserCheck, LayoutDashboard,
-  ListTodo, ChevronRight, UserX
+  ListTodo, ChevronRight, UserX, Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import { AdminAvatarPermissions } from '@/components/admin/AdminAvatarPermission
 import { AdminRoles } from '@/components/admin/AdminRoles';
 import { AdminUserApprovals } from '@/components/admin/AdminUserApprovals';
 import { AdminHardDelete } from '@/components/admin/AdminHardDelete';
+import { AdminCourseTaskLinks } from '@/components/admin/AdminCourseTaskLinks';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -266,6 +267,7 @@ export default function Admin() {
     { value: 'roles', label: 'Роли', icon: Shield },
     { value: 'appeals', label: 'Апелляции', icon: Scale },
     { value: 'topics', label: 'Темы', icon: BookOpen },
+    { value: 'course-links', label: 'Курсы', icon: Link2 },
     { value: 'avatars', label: 'Аватары', icon: Image },
     { value: 'notifications', label: 'Рассылка', icon: Bell },
     { value: 'harddelete', label: 'Удаление', icon: UserX },
@@ -556,6 +558,11 @@ export default function Admin() {
           {/* Appeals Tab */}
           <TabsContent value="appeals">
             <AdminAppeals />
+          </TabsContent>
+
+          {/* Course Links Tab */}
+          <TabsContent value="course-links">
+            <AdminCourseTaskLinks />
           </TabsContent>
 
           {/* Topics Tab */}
