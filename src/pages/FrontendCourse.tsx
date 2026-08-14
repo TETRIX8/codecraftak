@@ -50,7 +50,7 @@ export default function FrontendCourse() {
     const lessonIndex = frontendCourse.lessons.findIndex(item => item.id === selectedLesson.id);
     const nextLesson = frontendCourse.lessons[lessonIndex + 1];
     return (
-      <div className="min-h-screen pb-16">
+      <div className="min-h-screen w-full min-w-0 overflow-x-clip pb-16">
         <div className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-primary/15 via-background to-accent/10">
           <div className="container mx-auto max-w-5xl px-4 py-6 sm:py-10">
             <Button variant="ghost" onClick={() => navigate(`/courses/${frontendCourse.slug}`)} className="mb-6 -ml-2">
@@ -61,13 +61,13 @@ export default function FrontendCourse() {
               <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" /> {selectedLesson.duration}</Badge>
               <span className="text-sm text-muted-foreground">Занятие {selectedLesson.number} из {frontendCourse.lessons.length}</span>
             </div>
-            <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">{selectedLesson.title}</h1>
+            <h1 className="max-w-3xl break-words text-3xl font-bold leading-tight tracking-tight sm:text-5xl">{selectedLesson.title}</h1>
             <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">{selectedLesson.goal}</p>
           </div>
         </div>
 
-        <main className="container mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <article className="min-w-0 rounded-2xl border border-border/50 bg-card/60 p-5 shadow-xl shadow-primary/5 sm:p-8">
+        <main className="container mx-auto grid w-full min-w-0 max-w-5xl gap-6 overflow-x-clip px-3 py-6 sm:px-4 sm:py-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <article className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 shadow-xl shadow-primary/5 sm:p-8">
             <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
               <div className="flex items-start gap-3">
                 <Lightbulb className="mt-1 h-5 w-5 shrink-0 text-primary" />
@@ -97,18 +97,18 @@ export default function FrontendCourse() {
   }
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="min-h-screen w-full min-w-0 overflow-x-clip pb-16">
       <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-br from-primary/20 via-background to-purple-500/10">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
         <div className="container relative mx-auto max-w-6xl px-4 py-10 sm:py-16">
           <Button variant="ghost" onClick={() => navigate('/topics')} className="mb-8 -ml-2"><ArrowLeft className="mr-2 h-4 w-4" /> Все темы</Button>
-          <div className="grid items-end gap-8 lg:grid-cols-[1fr_360px]">
-            <div><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Авторский маршрут</Badge><Badge variant="outline">48 часов</Badge><Badge variant="outline">24 занятия</Badge></div><h1 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">{frontendCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{frontendCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(frontendCourse.lessons[Math.min(completed.length, frontendCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
+          <div className="grid min-w-0 items-end gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="min-w-0"><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Авторский маршрут</Badge><Badge variant="outline">48 часов</Badge><Badge variant="outline">24 занятия</Badge></div><h1 className="max-w-3xl break-words text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">{frontendCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{frontendCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(frontendCourse.lessons[Math.min(completed.length, frontendCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
             <Card className="border-primary/20 bg-background/50 backdrop-blur"><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Ваш прогресс</p><p className="mt-1 text-4xl font-bold">{progress}%</p></div><div className="rounded-2xl bg-primary/10 p-4 text-primary"><Code2 className="h-8 w-8" /></div></div><Progress value={progress} className="mt-5" /><p className="mt-3 text-sm text-muted-foreground">{completed.length} из {frontendCourse.lessons.length} занятий отмечено</p></CardContent></Card>
           </div>
         </div>
       </section>
-      <main className="container mx-auto max-w-6xl px-4 py-10">
+      <main className="container mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-3 py-8 sm:px-4 sm:py-10">
         <div className="grid gap-4 md:grid-cols-3">{courseStages.map(stage => <Card key={stage.name} className="border-border/50 bg-card/60"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="font-semibold">{stage.name}</span><Badge variant="outline">{stage.hours} ч.</Badge></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{stage.description}</p><p className="mt-4 text-xs text-muted-foreground">Занятия {stage.lessons}</p></CardContent></Card>)}</div>
         <div className="mb-6 mt-12 flex items-end justify-between"><div><p className="text-sm font-medium uppercase tracking-widest text-primary">Учебная карта</p><h2 className="mt-2 text-3xl font-bold">Все занятия по порядку</h2></div><Layers3 className="hidden h-8 w-8 text-muted-foreground sm:block" /></div>
         <div className="grid gap-4 md:grid-cols-2">{frontendCourse.lessons.map(item => <motion.button key={item.id} whileHover={{ y: -3 }} onClick={() => openLesson(item.id)} className="text-left"><Card className="h-full border-border/50 bg-card/60 transition-colors hover:border-primary/40"><CardContent className="flex gap-4 p-5"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold ${stageClasses[item.stage]}`}>{String(item.number).padStart(2, '0')}</div><div className="min-w-0 flex-1"><div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className={stageClasses[item.stage]}>{item.stage}</Badge><span className="text-xs text-muted-foreground">{item.duration}</span>{completed.includes(item.id) && <Check className="ml-auto h-4 w-4 text-green-400" />}</div><h3 className="font-semibold leading-6">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.goal}</p></div><ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" /></CardContent></Card></motion.button>)}</div>

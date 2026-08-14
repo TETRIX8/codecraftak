@@ -8,7 +8,7 @@ interface MarkdownContentProps {
 
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
   return (
-    <div className={cn('prose prose-invert max-w-none', className)}>
+    <div className={cn('prose prose-invert max-w-none min-w-0 break-words [&_img]:max-w-full [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto', className)}>
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
@@ -42,13 +42,13 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
               );
             }
             return (
-              <code className="block bg-muted p-4 rounded-lg text-sm font-mono overflow-x-auto">
+                <code className="block max-w-full overflow-x-auto whitespace-pre rounded-lg bg-muted p-3 text-xs leading-6 font-mono sm:p-4 sm:text-sm">
                 {children}
               </code>
             );
           },
           pre: ({ children }) => (
-            <pre className="bg-muted rounded-lg overflow-hidden mb-4">{children}</pre>
+            <pre className="mb-4 min-w-0 max-w-full overflow-hidden rounded-lg">{children}</pre>
           ),
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground mb-4">
