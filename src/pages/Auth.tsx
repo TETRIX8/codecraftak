@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { authEmail } from '@/lib/authEmail';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -48,7 +49,7 @@ export default function Auth() {
           return;
         }
         
-        const { error } = await signUp(email, password, nickname);
+        const { error, userId } = await signUp(email, password, nickname);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast.error('Пользователь с таким email уже зарегистрирован');
@@ -56,8 +57,13 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
-          toast.success('Регистрация отправлена! Ожидайте одобрения администратора.');
-          navigate('/');
+          try {
+            await authEmail('send_signup_code', { email, userId });
+            toast.success('Код подтверждения отправлен на email');
+            navigate(`/auth/verify-email?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(userId || '')}`);
+          } catch (emailError) {
+            toast.error(emailError instanceof Error ? emailError.message : 'Не удалось отправить код подтверждения');
+          }
         }
       }
     } catch (err) {
@@ -178,6 +184,8 @@ export default function Auth() {
               )}
             </Button>
           </form>
+
+          {isLogin && <div className="mt-4 text-center"><Link to="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">Забыли пароль?</Link></div>}
 
           <div className="mt-6 text-center">
             <button
