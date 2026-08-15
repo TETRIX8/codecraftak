@@ -10,17 +10,27 @@ import { MarkdownContent } from '@/components/common/MarkdownContent';
 import { type CourseStage } from '@/data/courseTypes';
 import { javascript118Course, javascript118Stages } from '@/data/javascript118Course';
 import { html56Course, html56Stages } from '@/data/html56Course';
+import { systemSoftwareCourse, systemSoftwareStages } from '@/data/systemSoftwareCourse';
+import { networkSecurityCourse, networkSecurityStages } from '@/data/networksecurity56hours';
+import { enterpriseDevelopmentCourse, enterpriseDevelopmentStages } from '@/data/enterprisedevelopment56hours';
+import { intelligentSystemsCourse, intelligentSystemsStages } from '@/data/intelligentsystems56hours';
 import { useAuth } from '@/contexts/AuthContext';
 import { sectionSlug, useCourseSectionProgress, type CourseTaskStatus } from '@/hooks/useCourseSectionLinks';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'frontend-course-progress-v1';
 
-const stageClasses: Record<CourseStage, string> = {
+const stageClasses: Record<string, string> = {
   HTML: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
   CSS: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
   JavaScript: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
+  C: 'border-slate-400/30 bg-slate-500/10 text-slate-200',
+  'C++23': 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
+  POSIX: 'border-orange-500/30 bg-orange-500/10 text-orange-300',
+  Concurrency: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
 };
+
+const stageClass = (stage: CourseStage) => stageClasses[stage] || 'border-primary/30 bg-primary/10 text-primary';
 
 function readProgress(): string[] {
   try {
@@ -35,9 +45,14 @@ export default function FrontendCourse() {
   const { slug, lessonId } = useParams<{ slug?: string; lessonId?: string }>();
   const [completed, setCompleted] = useState<string[]>(readProgress);
   const { user } = useAuth();
+  const isSystemSoftware = slug === systemSoftwareCourse.slug;
+  const isNetworkSecurity = slug === networkSecurityCourse.slug;
+  const isEnterpriseDevelopment = slug === enterpriseDevelopmentCourse.slug;
+  const isIntelligentSystems = slug === intelligentSystemsCourse.slug;
   const isJavascript118 = slug === javascript118Course.slug;
-  const activeCourse = isJavascript118 ? javascript118Course : html56Course;
-  const activeStages = isJavascript118 ? javascript118Stages : html56Stages;
+  const activeCourse = isSystemSoftware ? systemSoftwareCourse : isNetworkSecurity ? networkSecurityCourse : isEnterpriseDevelopment ? enterpriseDevelopmentCourse : isIntelligentSystems ? intelligentSystemsCourse : isJavascript118 ? javascript118Course : html56Course;
+  const activeStages = isSystemSoftware ? systemSoftwareStages : isNetworkSecurity ? networkSecurityStages : isEnterpriseDevelopment ? enterpriseDevelopmentStages : isIntelligentSystems ? intelligentSystemsStages : isJavascript118 ? javascript118Stages : html56Stages;
+  const finalProject = 'finalProject' in activeCourse ? activeCourse.finalProject : undefined;
   const { data: sectionProgress = [] } = useCourseSectionProgress(activeCourse.slug, user?.id);
   const hasAssignmentGate = sectionProgress.length > 0;
 
@@ -109,7 +124,7 @@ export default function FrontendCourse() {
               <ArrowLeft className="mr-2 h-4 w-4" /> К курсу
             </Button>
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <Badge className={stageClasses[selectedLesson.stage]} variant="outline">{selectedLesson.stage}</Badge>
+              <Badge className={stageClass(selectedLesson.stage)} variant="outline">{selectedLesson.stage}</Badge>
               <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" /> {selectedLesson.duration}</Badge>
               <span className="text-sm text-muted-foreground">Занятие {selectedLesson.number} из {activeCourse.lessons.length}</span>
             </div>
@@ -126,7 +141,9 @@ export default function FrontendCourse() {
                 <div><p className="font-semibold">Простая аналогия</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{selectedLesson.analogy}</p></div>
               </div>
             </div>
+            {selectedLesson.outcomes && <div className="mb-8 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5"><p className="font-semibold text-emerald-300">После урока студент умеет</p><ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">{selectedLesson.outcomes.map(item => <li key={item}>{item}</li>)}</ul></div>}
             <MarkdownContent content={selectedLesson.content} />
+            {selectedLesson.successCriteria && <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5"><p className="font-semibold">Контрольная точка</p><ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">{selectedLesson.successCriteria.map(item => <li key={item}>{item}</li>)}</ul></div>}
             <div className="mt-8 rounded-xl border border-border/50 bg-muted/20 p-5">
               <div className="flex items-start gap-3"><Play className="mt-1 h-5 w-5 shrink-0 text-primary" /><div><p className="font-semibold">Практика занятия</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedLesson.practice}</p></div></div>
             </div>
@@ -160,16 +177,17 @@ export default function FrontendCourse() {
         <div className="container relative mx-auto max-w-6xl px-4 py-10 sm:py-16">
           <Button variant="ghost" onClick={() => navigate('/topics')} className="mb-8 -ml-2"><ArrowLeft className="mr-2 h-4 w-4" /> Все темы</Button>
           <div className="grid min-w-0 items-end gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0"><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> Авторский маршрут</Badge><Badge variant="outline">{activeCourse.totalHours} часов</Badge><Badge variant="outline">{activeCourse.lessons.length} занятий</Badge></div><h1 className="max-w-3xl break-words text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">{activeCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{activeCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(activeCourse.lessons[Math.min(completed.length, activeCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
+            <div className="min-w-0"><div className="mb-5 flex flex-wrap gap-2"><Badge className="gap-1"><Sparkles className="h-3 w-3" /> {isSystemSoftware || isNetworkSecurity || isEnterpriseDevelopment || isIntelligentSystems ? 'Полная дисциплина' : 'Авторский маршрут'}</Badge><Badge variant="outline">{activeCourse.totalHours} часов</Badge><Badge variant="outline">{activeCourse.lessons.length} занятий</Badge></div><h1 className="max-w-3xl break-words text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">{activeCourse.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">{activeCourse.description}</p><Button size="lg" className="mt-7 gap-2" onClick={() => openLesson(activeCourse.lessons[Math.min(completed.length, activeCourse.lessons.length - 1)].id)}><Play className="h-4 w-4" /> Продолжить обучение</Button></div>
             <Card className="border-primary/20 bg-background/50 backdrop-blur"><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Ваш прогресс</p><p className="mt-1 text-4xl font-bold">{progress}%</p></div><div className="rounded-2xl bg-primary/10 p-4 text-primary"><Code2 className="h-8 w-8" /></div></div><Progress value={progress} className="mt-5" /><p className="mt-3 text-sm text-muted-foreground">{completed.length} из {activeCourse.lessons.length} занятий отмечено</p></CardContent></Card>
           </div>
         </div>
       </section>
       <main className="container mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-3 py-8 sm:px-4 sm:py-10">
-        <div className="grid gap-4 md:grid-cols-3">{activeStages.map(stage => <Card key={stage.name} className="border-border/50 bg-card/60"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="font-semibold">{stage.name}</span><Badge variant="outline">{stage.hours} ч.</Badge></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{stage.description}</p><p className="mt-4 text-xs text-muted-foreground">Занятия {stage.lessons}</p></CardContent></Card>)}</div>
+        <div className="grid gap-4 md:grid-cols-3">{activeStages.map(stage => <Card key={stage.name} className="border-border/50 bg-card/60"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="font-semibold">{stage.name}</span><Badge variant="outline">{stage.hours} ч.</Badge></div><p className="mt-3 text-sm leading-6 text-muted-foreground">{stage.description}</p><p className="mt-4 text-xs text-muted-foreground">Занятия {stage.lessons}</p>{stage.assignment && <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Практика раздела</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{stage.assignment}</p></div>}</CardContent></Card>)}</div>
         {hasAssignmentGate && <div className="mt-6 grid gap-3 md:grid-cols-2">{sectionProgress.map(section => <Card key={section.id} className="border-border/50 bg-card/60"><CardContent className="flex items-center gap-3 p-4"><div className={`rounded-lg p-2 ${section.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400' : section.status === 'locked' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>{section.status === 'locked' ? <Lock className="h-4 w-4" /> : section.status === 'accepted' ? <Check className="h-4 w-4" /> : <ClipboardCheck className="h-4 w-4" />}</div><div className="min-w-0 flex-1"><p className="font-medium">{section.section_position}. {section.section_title}</p><p className={`text-sm ${statusClass[section.status]}`}>{statusLabel[section.status]}</p>{section.solution && <p className="text-xs text-muted-foreground">Проверки: {section.solution.reviews_count}/3</p>}</div>{section.tasks && section.isUnlocked && <Button variant="outline" size="sm" onClick={() => navigate(`/tasks/${section.task_id}`)}>Задание</Button>}</CardContent></Card>)}</div>}
         <div className="mb-6 mt-12 flex items-end justify-between"><div><p className="text-sm font-medium uppercase tracking-widest text-primary">Учебная карта</p><h2 className="mt-2 text-3xl font-bold">Все занятия по порядку</h2></div><Layers3 className="hidden h-8 w-8 text-muted-foreground sm:block" /></div>
-        <div className="grid gap-4 md:grid-cols-2">{activeCourse.lessons.map(item => <motion.button key={item.id} whileHover={{ y: -3 }} onClick={() => openLesson(item.id)} className="text-left"><Card className="h-full border-border/50 bg-card/60 transition-colors hover:border-primary/40"><CardContent className="flex gap-4 p-5"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold ${stageClasses[item.stage]}`}>{String(item.number).padStart(2, '0')}</div><div className="min-w-0 flex-1"><div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className={stageClasses[item.stage]}>{item.stage}</Badge><span className="text-xs text-muted-foreground">{item.duration}</span>{completed.includes(item.id) && <Check className="ml-auto h-4 w-4 text-green-400" />}</div><h3 className="font-semibold leading-6">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.goal}</p></div><ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" /></CardContent></Card></motion.button>)}</div>
+        <div className="grid gap-4 md:grid-cols-2">{activeCourse.lessons.map(item => <motion.button key={item.id} whileHover={{ y: -3 }} onClick={() => openLesson(item.id)} className="text-left"><Card className="h-full border-border/50 bg-card/60 transition-colors hover:border-primary/40"><CardContent className="flex gap-4 p-5"><div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold ${stageClass(item.stage)}`}>{String(item.number).padStart(2, '0')}</div><div className="min-w-0 flex-1"><div className="mb-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className={stageClass(item.stage)}>{item.stage}</Badge><span className="text-xs text-muted-foreground">{item.duration}</span>{completed.includes(item.id) && <Check className="ml-auto h-4 w-4 text-green-400" />}</div><h3 className="font-semibold leading-6">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.goal}</p></div><ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" /></CardContent></Card></motion.button>)}</div>
+        {finalProject && <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6 sm:p-8"><div className="flex items-start gap-4"><BookOpen className="mt-1 h-6 w-6 shrink-0 text-cyan-300" /><div><h2 className="text-xl font-bold">Итоговый проект</h2><p className="mt-2 max-w-3xl leading-7 text-muted-foreground">{finalProject}</p></div></div></div>}
         <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8"><div className="flex items-start gap-4"><BookOpen className="mt-1 h-6 w-6 shrink-0 text-primary" /><div><h2 className="text-xl font-bold">Как проходить курс</h2><p className="mt-2 max-w-3xl leading-7 text-muted-foreground">На каждое занятие закладывайте примерно два часа: 35 минут на объяснение, 25 минут на разбор примеров, 50 минут на практику и 10 минут на повторение. Не переходите дальше, пока не сможете объяснить тему своими словами и изменить пример самостоятельно.</p></div></div></div>
       </main>
     </div>
