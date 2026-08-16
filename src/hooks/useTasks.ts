@@ -47,16 +47,20 @@ export function useTasksWithSolutions() {
     queryKey: ['tasks-with-solutions', user?.id, profile?.course],
     queryFn: async () => {
       // Получаем все задания
-      let tasksQuery = supabase
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('task_assignments')
+        .select('task_id')
+        .eq('user_id', user?.id || '');
+      if (assignmentsError) throw assignmentsError;
+      const assignedTaskIds = new Set((assignments || []).map((assignment) => assignment.task_id));
+
+      const { data: allTasks, error: tasksError } = await supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false });
+      if (tasksError) throw tasksError;
 
-      if (profile?.course) {
-        tasksQuery = tasksQuery.eq('course', profile.course);
-      }
-
-      const { data: tasks, error: tasksError } = await tasksQuery;
+      const tasks = (allTasks || []).filter((task) => task.course === profile?.course || assignedTaskIds.has(task.id));
 
       if (tasksError) throw tasksError;
 
