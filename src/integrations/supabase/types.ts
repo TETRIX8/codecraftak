@@ -208,6 +208,47 @@ export type Database = {
         }
         Relationships: []
       }
+      course_section_task_links: {
+        Row: {
+          course_slug: string
+          created_at: string
+          id: string
+          section_id: string
+          section_position: number
+          section_title: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          course_slug: string
+          created_at?: string
+          id?: string
+          section_id: string
+          section_position?: number
+          section_title: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          course_slug?: string
+          created_at?: string
+          id?: string
+          section_id?: string
+          section_position?: number
+          section_title?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_section_task_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_invites: {
         Row: {
           created_at: string
