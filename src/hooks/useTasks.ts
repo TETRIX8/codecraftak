@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 
 export interface Task {
   id: string;
@@ -8,6 +9,7 @@ export interface Task {
   description: string;
   difficulty: 'easy' | 'medium' | 'hard';
   language: 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
+  course: 2 | 3;
   completions: number;
   created_at: string;
 }
@@ -39,15 +41,22 @@ export function useTasks() {
 // Хук для получения заданий с учетом решений пользователя
 export function useTasksWithSolutions() {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
 
   return useQuery({
-    queryKey: ['tasks-with-solutions', user?.id],
+    queryKey: ['tasks-with-solutions', user?.id, profile?.course],
     queryFn: async () => {
       // Получаем все задания
-      const { data: tasks, error: tasksError } = await supabase
+      let tasksQuery = supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (profile?.course) {
+        tasksQuery = tasksQuery.eq('course', profile.course);
+      }
+
+      const { data: tasks, error: tasksError } = await tasksQuery;
 
       if (tasksError) throw tasksError;
 
@@ -115,7 +124,7 @@ export function useTasksWithSolutions() {
 
       return { available, pending, completed };
     },
-    enabled: true,
+    enabled: !!user?.id && !!profile?.course,
   });
 }
 

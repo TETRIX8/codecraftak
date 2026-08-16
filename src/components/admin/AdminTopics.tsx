@@ -28,6 +28,7 @@ interface TopicFormData {
   description: string;
   content: string;
   category: string;
+  course: 2 | 3;
   is_published: boolean;
 }
 
@@ -36,6 +37,7 @@ const emptyForm: TopicFormData = {
   description: '',
   content: '',
   category: 'general',
+  course: 2,
   is_published: true,
 };
 
@@ -66,6 +68,7 @@ export function AdminTopics() {
       description: topic.description || '',
       content: topic.content,
       category: topic.category,
+      course: topic.course,
       is_published: topic.is_published,
     });
     setIsOpen(true);
@@ -129,6 +132,20 @@ export function AdminTopics() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Курс</Label>
+                <Select
+                  value={String(formData.course)}
+                  onValueChange={(value) => setFormData({ ...formData, course: Number(value) as 2 | 3 })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2">2 курс</SelectItem>
+                    <SelectItem value="3">3 курс</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -208,6 +225,8 @@ export function AdminTopics() {
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                     <span className="capitalize">{CATEGORIES.find(c => c.value === topic.category)?.label || topic.category}</span>
+                    <span>•</span>
+                    <span>{topic.course} курс</span>
                     <span>•</span>
                     <span>{topic.views_count} просмотров</span>
                     <span>•</span>

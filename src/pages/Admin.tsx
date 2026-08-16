@@ -5,7 +5,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { 
   Plus, Edit2, Trash2, Loader2, ArrowLeft, Shield, Users, Bell, 
   BookOpen, Star, Image, Code2, Scale, UserCheck, LayoutDashboard,
-  ListTodo, ChevronRight, UserX, Link2
+  ListTodo, ChevronRight, UserX, Link2, UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ import { AdminRoles } from '@/components/admin/AdminRoles';
 import { AdminUserApprovals } from '@/components/admin/AdminUserApprovals';
 import { AdminHardDelete } from '@/components/admin/AdminHardDelete';
 import { AdminCourseTaskLinks } from '@/components/admin/AdminCourseTaskLinks';
+import { AdminTaskAssignments } from '@/components/admin/AdminTaskAssignments';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type Language = 'javascript' | 'typescript' | 'python' | 'html' | 'css' | 'java' | 'cpp';
@@ -41,6 +42,7 @@ interface TaskFormData {
   description: string;
   difficulty: Difficulty;
   language: Language;
+  course: 2 | 3;
 }
 
 const emptyForm: TaskFormData = {
@@ -48,6 +50,7 @@ const emptyForm: TaskFormData = {
   description: '',
   difficulty: 'easy',
   language: 'javascript',
+  course: 2,
 };
 
 export default function Admin() {
@@ -114,6 +117,7 @@ export default function Admin() {
         description: data.description,
         difficulty: data.difficulty,
         language: data.language,
+        course: data.course,
       });
       if (error) throw error;
     },
@@ -136,6 +140,7 @@ export default function Admin() {
           description: data.description,
           difficulty: data.difficulty,
           language: data.language,
+          course: data.course,
         })
         .eq('id', id);
       if (error) throw error;
@@ -183,6 +188,7 @@ export default function Admin() {
       description: task.description,
       difficulty: task.difficulty,
       language: task.language,
+      course: task.course,
     });
     setIsOpen(true);
   };
@@ -268,6 +274,7 @@ export default function Admin() {
     { value: 'appeals', label: 'Апелляции', icon: Scale },
     { value: 'topics', label: 'Темы', icon: BookOpen },
     { value: 'course-links', label: 'Курсы', icon: Link2 },
+    { value: 'assignments', label: 'Индивидуальные', icon: UserPlus },
     { value: 'avatars', label: 'Аватары', icon: Image },
     { value: 'notifications', label: 'Рассылка', icon: Bell },
     { value: 'harddelete', label: 'Удаление', icon: UserX },
@@ -446,6 +453,19 @@ export default function Admin() {
                         className="font-mono text-sm"
                       />
                     </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Курс</label>
+                      <Select
+                        value={String(formData.course)}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, course: Number(value) as 2 | 3 }))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 курс</SelectItem>
+                          <SelectItem value="3">3 курс</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Сложность</label>
@@ -510,6 +530,7 @@ export default function Admin() {
                             <div className="flex flex-wrap gap-2 mb-2">
                               <DifficultyBadge difficulty={task.difficulty} />
                               <LanguageBadge language={task.language} />
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{task.course} курс</span>
                             </div>
                             <h3 className="font-semibold">{task.title}</h3>
                             <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{task.description}</p>
@@ -565,6 +586,10 @@ export default function Admin() {
             <AdminCourseTaskLinks />
           </TabsContent>
 
+          {/* Individual Assignments Tab */}
+          <TabsContent value="assignments">
+            <AdminTaskAssignments />
+          </TabsContent>
           {/* Topics Tab */}
           <TabsContent value="topics">
             <AdminTopics />

@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 
 export interface Topic {
   id: string;
   title: string;
   description: string | null;
   content: string;
+  course: 2 | 3;
   category: string;
   author_id: string | null;
   is_published: boolean;
@@ -20,8 +22,9 @@ export interface Topic {
 }
 
 export function useTopics(category?: string) {
+  const { data: profile } = useProfile();
   return useQuery({
-    queryKey: ['topics', category],
+    queryKey: ['topics', category, profile?.course],
     queryFn: async () => {
       let query = supabase
         .from('topics')
@@ -35,11 +38,15 @@ export function useTopics(category?: string) {
       if (category && category !== 'all') {
         query = query.eq('category', category);
       }
+      if (profile?.course) {
+        query = query.eq('course', profile.course);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
       return data as Topic[];
     },
+    enabled: !!profile?.course,
   });
 }
 
@@ -117,6 +124,7 @@ export function useAdminTopics() {
       description?: string;
       content: string;
       category: string;
+      course: 2 | 3;
       is_published: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -147,6 +155,7 @@ export function useAdminTopics() {
   const updateTopic = useMutation({
     mutationFn: async ({ id, ...topic }: {
       id: string;
+      course?: 2 | 3;
       title?: string;
       description?: string;
       content?: string;

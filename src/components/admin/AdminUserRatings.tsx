@@ -20,6 +20,7 @@ interface UserStats {
   total_reviews: number;
   reviews_completed: number;
   review_balance: number;
+  course: 2 | 3;
 }
 
 export function AdminUserRatings() {
@@ -29,6 +30,7 @@ export function AdminUserRatings() {
   const [selectedUser, setSelectedUser] = useState<UserStats | null>(null);
   const [activeTab, setActiveTab] = useState('trust_rating');
   const [inputValue, setInputValue] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<2 | 3>(2);
 
   const updateProfile = useMutation({
     mutationFn: async ({ userId, field, value }: { userId: string; field: string; value: number }) => {
@@ -48,6 +50,7 @@ export function AdminUserRatings() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       const fieldNames: Record<string, string> = {
+        course: 'Курс',
         trust_rating: 'Очки',
         correct_reviews: 'Правильных проверок',
         total_reviews: 'Всего проверок',
@@ -126,16 +129,20 @@ export function AdminUserRatings() {
               <div
                 key={user.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                onClick={() => setSelectedUser({
-                  id: user.id,
-                  nickname: user.nickname,
-                  avatar_url: user.avatar_url,
-                  trust_rating: user.trust_rating ?? 50,
-                  correct_reviews: (user as any).correct_reviews ?? 0,
-                  total_reviews: (user as any).total_reviews ?? 0,
-                  reviews_completed: user.reviews_completed ?? 0,
-                  review_balance: (user as any).review_balance ?? 0,
-                })}
+                onClick={() => {
+                  setSelectedUser({
+                    id: user.id,
+                    nickname: user.nickname,
+                    avatar_url: user.avatar_url,
+                    trust_rating: user.trust_rating ?? 50,
+                    correct_reviews: (user as any).correct_reviews ?? 0,
+                    total_reviews: (user as any).total_reviews ?? 0,
+                    reviews_completed: user.reviews_completed ?? 0,
+                    review_balance: (user as any).review_balance ?? 0,
+                    course: (user as any).course === 3 ? 3 : 2,
+                  });
+                  setSelectedCourse((user as any).course === 3 ? 3 : 2);
+                }}
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
@@ -147,6 +154,7 @@ export function AdminUserRatings() {
                     <div className="flex gap-3 text-xs text-muted-foreground">
                       <span>Очки: {user.trust_rating}%</span>
                       <span>Проверок: {user.reviews_completed}</span>
+                      <span>Курс: {(user as any).course || 2}</span>
                     </div>
                   </div>
                 </div>
@@ -176,6 +184,27 @@ export function AdminUserRatings() {
                   <div>
                     <p className="font-medium">{selectedUser.nickname}</p>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="admin-course">Курс ученика</label>
+                  <select
+                    id="admin-course"
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(Number(e.target.value) as 2 | 3)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value={2}>2 курс</option>
+                    <option value={3}>3 курс</option>
+                  </select>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={updateProfile.isPending || selectedCourse === selectedUser.course}
+                    onClick={() => updateProfile.mutate({ userId: selectedUser.id, field: 'course', value: selectedCourse })}
+                  >
+                    Сохранить курс
+                  </Button>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>

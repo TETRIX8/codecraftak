@@ -16,6 +16,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [course, setCourse] = useState<2 | 3>(2);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await signUp(email, password, nickname);
+        const { error } = await signUp(email, password, nickname, course);
         if (error) {
           if (error.message.includes('User already registered')) {
             toast.error('Пользователь с таким email уже зарегистрирован');
@@ -155,6 +156,22 @@ export default function Auth() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div>
+                <Label htmlFor="course">Курс</Label>
+                <select
+                  id="course"
+                  value={course}
+                  onChange={(e) => setCourse(Number(e.target.value) as 2 | 3)}
+                  className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                >
+                  <option value={2}>2 курс</option>
+                  <option value={3}>3 курс</option>
+                </select>
+              </div>
+            )}
+
             {!isLogin && (
               <div>
                 <Label htmlFor="nickname">Никнейм</Label>

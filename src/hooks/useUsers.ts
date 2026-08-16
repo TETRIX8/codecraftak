@@ -11,6 +11,7 @@ export interface UserProfile {
   level: 'beginner' | 'reviewer' | 'expert' | null;
   likes_received: number | null;
   created_at: string | null;
+  course: 2 | 3;
 }
 
 export function useSearchUsers(query: string) {
@@ -85,7 +86,7 @@ export function useUsers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname, avatar_url, trust_rating, reviews_completed, level, likes_received, created_at, correct_reviews, total_reviews, review_balance, can_upload_avatar')
+        .select('id, nickname, avatar_url, trust_rating, reviews_completed, level, likes_received, created_at, course, correct_reviews, total_reviews, review_balance, can_upload_avatar')
         .order('created_at', { ascending: false })
         .limit(100);
 

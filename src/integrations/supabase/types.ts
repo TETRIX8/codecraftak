@@ -542,6 +542,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           can_upload_avatar: boolean | null
+          course: number
           correct_reviews: number | null
           created_at: string | null
           daily_games_count: number | null
@@ -568,6 +569,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           can_upload_avatar?: boolean | null
+          course?: number
           correct_reviews?: number | null
           created_at?: string | null
           daily_games_count?: number | null
@@ -594,6 +596,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           can_upload_avatar?: boolean | null
+          course?: number
           correct_reviews?: number | null
           created_at?: string | null
           daily_games_count?: number | null
@@ -866,6 +869,7 @@ export type Database = {
       tasks: {
         Row: {
           completions: number | null
+          course: number
           created_at: string | null
           description: string
           difficulty: Database["public"]["Enums"]["difficulty"]
@@ -876,6 +880,7 @@ export type Database = {
         }
         Insert: {
           completions?: number | null
+          course?: number
           created_at?: string | null
           description: string
           difficulty: Database["public"]["Enums"]["difficulty"]
@@ -886,6 +891,7 @@ export type Database = {
         }
         Update: {
           completions?: number | null
+          course?: number
           created_at?: string | null
           description?: string
           difficulty?: Database["public"]["Enums"]["difficulty"]
@@ -901,6 +907,7 @@ export type Database = {
           author_id: string | null
           category: string | null
           content: string
+          course: number
           created_at: string
           description: string | null
           id: string
@@ -913,6 +920,7 @@ export type Database = {
           author_id?: string | null
           category?: string | null
           content: string
+          course?: number
           created_at?: string
           description?: string | null
           id?: string
@@ -925,6 +933,7 @@ export type Database = {
           author_id?: string | null
           category?: string | null
           content?: string
+          course?: number
           created_at?: string
           description?: string | null
           id?: string
