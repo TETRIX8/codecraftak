@@ -1,21 +1,29 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Code2, Mail, Lock, User, ArrowRight, Eye, EyeOff, MailCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+type Mode = 'login' | 'signup' | 'forgot';
+
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+  const [sentTo, setSentTo] = useState<string | null>(null);
+
+  const isLogin = mode === 'login';
+  const isSignup = mode === 'signup';
+  const isForgot = mode === 'forgot';
+
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -24,11 +32,23 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isForgot) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) {
+          toast.error(error.message);
+        } else {
+          setSentTo(email);
+          toast.success('Письмо со ссылкой для сброса пароля отправлено');
+        }
+      } else if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast.error('Неверный email или пароль');
+          } else if (error.message.includes('Email not confirmed')) {
+            toast.error('Подтвердите почту — мы отправили вам письмо');
           } else {
             toast.error(error.message);
           }
@@ -47,7 +67,7 @@ export default function Auth() {
           setLoading(false);
           return;
         }
-        
+
         const { error } = await signUp(email, password, nickname);
         if (error) {
           if (error.message.includes('User already registered')) {
@@ -56,8 +76,8 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
-          toast.success('Регистрация отправлена! Ожидайте одобрения администратора.');
-          navigate('/');
+          setSentTo(email);
+          toast.success('Проверьте почту — мы отправили письмо для подтверждения');
         }
       }
     } catch (err) {
@@ -66,6 +86,38 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (sentTo) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 py-24">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative w-full max-w-md p-8 rounded-2xl bg-card border border-border text-center"
+        >
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <MailCheck className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Письмо отправлено</h1>
+          <p className="text-muted-foreground mb-6">
+            Мы отправили письмо на <span className="text-foreground font-medium">{sentTo}</span>.
+            Откройте его и перейдите по ссылке, чтобы продолжить.
+          </p>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setSentTo(null);
+              setMode('login');
+            }}
+          >
+            Вернуться ко входу
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-24">
