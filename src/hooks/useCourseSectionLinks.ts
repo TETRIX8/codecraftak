@@ -14,10 +14,11 @@ export interface CourseSectionTaskLink {
   tasks?: {
     id: string;
     title: string;
-    description: string;
-    difficulty: 'easy' | 'medium' | 'hard';
+    description?: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
     language: string;
   } | null;
+
 }
 
 interface UserSolution {
