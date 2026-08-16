@@ -10,8 +10,9 @@ export interface FrontendLesson {
   hours?: number;
   goal: string;
   analogy: string;
-  content: string;
-  practice: string;
+  content?: string;
+  practice?: string;
+
   outcomes?: string[];
   syntax?: string;
   example?: string;
