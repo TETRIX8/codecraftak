@@ -52,7 +52,7 @@ export default function FrontendCourse() {
   const isJavascript118 = slug === javascript118Course.slug;
   const activeCourse = isSystemSoftware ? systemSoftwareCourse : isNetworkSecurity ? networkSecurityCourse : isEnterpriseDevelopment ? enterpriseDevelopmentCourse : isIntelligentSystems ? intelligentSystemsCourse : isJavascript118 ? javascript118Course : html56Course;
   const activeStages = isSystemSoftware ? systemSoftwareStages : isNetworkSecurity ? networkSecurityStages : isEnterpriseDevelopment ? enterpriseDevelopmentStages : isIntelligentSystems ? intelligentSystemsStages : isJavascript118 ? javascript118Stages : html56Stages;
-  const finalProject = 'finalProject' in activeCourse ? activeCourse.finalProject : undefined;
+  const finalProject = ('finalProject' in activeCourse ? activeCourse.finalProject : undefined) as string | undefined;
   const { data: sectionProgress = [] } = useCourseSectionProgress(activeCourse.slug, user?.id);
   const hasAssignmentGate = sectionProgress.length > 0;
 
