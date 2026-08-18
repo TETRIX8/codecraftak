@@ -17,6 +17,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [course, setCourse] = useState<2 | 3>(2);
+  const [course, setCourse] = useState<2 | 3>(2);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -146,17 +147,19 @@ export default function Auth() {
         {/* Auth Card */}
         <div className="p-8 rounded-2xl bg-card border border-border">
           <h1 className="text-2xl font-bold text-center mb-2">
-            {isLogin ? 'Вход в аккаунт' : 'Регистрация'}
+            {isForgot ? 'Восстановление пароля' : isLogin ? 'Вход в аккаунт' : 'Регистрация'}
           </h1>
           <p className="text-muted-foreground text-center mb-8">
-            {isLogin 
-              ? 'Введите данные для входа' 
-              : 'Создайте аккаунт для начала работы'
+            {isForgot
+              ? 'Укажите почту — пришлём ссылку для сброса пароля'
+              : isLogin
+                ? 'Введите данные для входа'
+                : 'Создайте аккаунт для начала работы'
             }
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {isSignup && (
               <div>
                 <Label htmlFor="course">Курс</Label>
                 <select
@@ -172,7 +175,7 @@ export default function Auth() {
               </div>
             )}
 
-            {!isLogin && (
+            {isSignup && (
               <div>
                 <Label htmlFor="nickname">Никнейм</Label>
                 <div className="relative mt-1.5">
@@ -184,7 +187,7 @@ export default function Auth() {
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     className="pl-10 bg-background"
-                    required={!isLogin}
+                    required={isSignup}
                   />
                 </div>
               </div>
@@ -206,6 +209,7 @@ export default function Auth() {
               </div>
             </div>
 
+            {!isForgot && (
             <div>
               <Label htmlFor="password">Пароль</Label>
               <div className="relative mt-1.5">
@@ -229,6 +233,17 @@ export default function Auth() {
                 </button>
               </div>
             </div>
+            )}
+
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => setMode('forgot')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Забыли пароль?
+              </button>
+            )}
 
             <Button
               type="submit"
@@ -241,7 +256,7 @@ export default function Auth() {
                 <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               ) : (
                 <>
-                  {isLogin ? 'Войти' : 'Зарегистрироваться'}
+                  {isForgot ? 'Отправить ссылку' : isLogin ? 'Войти' : 'Зарегистрироваться'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -251,12 +266,14 @@ export default function Auth() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => setMode(isLogin ? 'signup' : 'login')}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin 
-                ? 'Нет аккаунта? Зарегистрироваться' 
-                : 'Уже есть аккаунт? Войти'
+              {isForgot
+                ? 'Вернуться ко входу'
+                : isLogin
+                  ? 'Нет аккаунта? Зарегистрироваться'
+                  : 'Уже есть аккаунт? Войти'
               }
             </button>
           </div>
