@@ -16,6 +16,7 @@ export interface Profile {
   likes_received: number;
   correct_reviews: number;
   total_reviews: number;
+  course?: number;
 }
 
 export interface LeaderboardProfile extends Profile {

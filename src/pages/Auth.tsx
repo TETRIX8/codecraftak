@@ -17,7 +17,6 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [course, setCourse] = useState<2 | 3>(2);
-  const [course, setCourse] = useState<2 | 3>(2);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
