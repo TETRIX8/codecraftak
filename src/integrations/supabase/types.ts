@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      anticheat_cases: {
+        Row: {
+          compared_solution_id: string | null
+          created_at: string
+          id: string
+          moderator_comment: string | null
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_score: number
+          solution_id: string
+          status: string
+          subject_user_id: string
+        }
+        Insert: {
+          compared_solution_id?: string | null
+          created_at?: string
+          id?: string
+          moderator_comment?: string | null
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          solution_id: string
+          status?: string
+          subject_user_id: string
+        }
+        Update: {
+          compared_solution_id?: string | null
+          created_at?: string
+          id?: string
+          moderator_comment?: string | null
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          solution_id?: string
+          status?: string
+          subject_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anticheat_cases_compared_solution_id_fkey"
+            columns: ["compared_solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticheat_cases_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticheat_cases_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anticheat_cases_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appeals: {
         Row: {
           created_at: string | null
@@ -542,8 +613,8 @@ export type Database = {
         Row: {
           avatar_url: string | null
           can_upload_avatar: boolean | null
-          course: number
           correct_reviews: number | null
+          course: number
           created_at: string | null
           daily_games_count: number | null
           daily_reviews_count: number | null
@@ -569,8 +640,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           can_upload_avatar?: boolean | null
-          course?: number
           correct_reviews?: number | null
+          course?: number
           created_at?: string | null
           daily_games_count?: number | null
           daily_reviews_count?: number | null
@@ -596,8 +667,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           can_upload_avatar?: boolean | null
-          course?: number
           correct_reviews?: number | null
+          course?: number
           created_at?: string | null
           daily_games_count?: number | null
           daily_reviews_count?: number | null
@@ -860,6 +931,52 @@ export type Database = {
           {
             foreignKeyName: "subjects_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
