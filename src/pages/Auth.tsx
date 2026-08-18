@@ -34,11 +34,15 @@ export default function Auth() {
 
     try {
       if (isForgot) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+        const { data, error } = await supabase.functions.invoke('send-auth-email', {
+          body: {
+            type: 'recovery',
+            email,
+            redirectTo: `${window.location.origin}/reset-password`,
+          },
         });
-        if (error) {
-          toast.error(error.message);
+        if (error || (data as any)?.error) {
+          toast.error((data as any)?.error || 'Не удалось отправить письмо');
         } else {
           setSentTo(email);
           toast.success('Письмо со ссылкой для сброса пароля отправлено');
@@ -69,13 +73,18 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await signUp(email, password, nickname, course);
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            toast.error('Пользователь с таким email уже зарегистрирован');
-          } else {
-            toast.error(error.message);
-          }
+        const { data, error } = await supabase.functions.invoke('send-auth-email', {
+          body: {
+            type: 'signup',
+            email,
+            password,
+            nickname,
+            course,
+            redirectTo: `${window.location.origin}/`,
+          },
+        });
+        if (error || (data as any)?.error) {
+          toast.error((data as any)?.error || 'Не удалось зарегистрироваться');
         } else {
           setSentTo(email);
           toast.success('Проверьте почту — мы отправили письмо для подтверждения');
