@@ -1,98 +1,152 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { renderEmail } from "../_shared/email-template.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const SITE_URL = Deno.env.get("SITE_URL");
+const ALLOWED_ORIGINS = new Set(
+  (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
 const FROM = "MOKSUHUB <onboarding@resend.dev>";
+const GENERIC_RESPONSE = JSON.stringify({
+  success: true,
+  message: "Если адрес поддерживается сервисом, письмо будет отправлено.",
+});
+
+function response(body: string, status = 200, origin?: string) {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers.set("Access-Control-Allow-Origin", origin);
+    headers.set("Vary", "Origin");
+  }
+  return new Response(body, { status, headers });
+}
+
+function normaliseEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
+function isAllowedRedirect(value: unknown): value is string {
+  if (typeof value !== "string" || !SITE_URL) return false;
+  try {
+    return new URL(value).origin === new URL(SITE_URL).origin;
+  } catch {
+    return false;
+  }
+}
+
+async function sha256(value: string): Promise<string> {
+  const data = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const origin = req.headers.get("Origin") ?? "";
+
+  if (req.method === "OPTIONS") {
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) return response(JSON.stringify({ error: "Forbidden" }), 403);
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Max-Age": "86400",
+        "Vary": "Origin",
+      },
+    });
+  }
+
+  if (req.method !== "POST" || !origin || !ALLOWED_ORIGINS.has(origin)) {
+    return response(JSON.stringify({ error: "Forbidden" }), 403);
+  }
 
   try {
-    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
-
-    const { type, email, password, nickname, course, redirectTo } = await req.json();
-
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return new Response(JSON.stringify({ error: "Некорректный email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (type !== "signup" && type !== "recovery") {
-      return new Response(JSON.stringify({ error: "Некорректный тип письма" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!RESEND_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SITE_URL) {
+      console.error("send-auth-email is missing required configuration");
+      return response(JSON.stringify({ error: "Service unavailable" }), 503, origin);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const payload = await req.json();
+    const { type, password, nickname, course } = payload;
+    const email = normaliseEmail(payload.email);
 
-    let linkRes;
-    if (type === "signup") {
-      if (!password || String(password).length < 6) {
-        return new Response(JSON.stringify({ error: "Пароль должен быть не менее 6 символов" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // The same successful response is returned for invalid and unknown emails to
+    // avoid account enumeration. Invalid input never reaches email providers.
+    if (!email || (type !== "signup" && type !== "recovery")) {
+      return response(GENERIC_RESPONSE, 202, origin);
+    }
+
+    if (type === "signup" && (typeof password !== "string" || password.length < 12 || password.length > 128)) {
+      return response(GENERIC_RESPONSE, 202, origin);
+    }
+
+    const clientIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+    const rateKey = await sha256(`${clientIp}:${email}`);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: allowed, error: quotaError } = await supabase.rpc("consume_auth_email_quota", {
+      _rate_key: rateKey,
+      _limit: 5,
+      _window: "01:00:00",
+    });
+
+    if (quotaError || !allowed) {
+      if (quotaError) console.error("auth email rate-limit failure", quotaError.message);
+      return response(GENERIC_RESPONSE, 202, origin);
+    }
+
+    const redirectTo = isAllowedRedirect(payload.redirectTo) ? payload.redirectTo : SITE_URL;
+    const linkResult = type === "signup"
+      ? await supabase.auth.admin.generateLink({
+          type: "signup",
+          email,
+          password,
+          options: {
+            data: {
+              nickname: typeof nickname === "string" ? nickname.slice(0, 20) : undefined,
+              course: course === 2 || course === 3 ? course : 2,
+            },
+            redirectTo,
+          },
+        })
+      : await supabase.auth.admin.generateLink({
+          type: "recovery",
+          email,
+          options: { redirectTo },
         });
-      }
-      linkRes = await supabase.auth.admin.generateLink({
-        type: "signup",
-        email,
-        password,
-        options: {
-          data: { nickname, course },
-          redirectTo: redirectTo || undefined,
-        },
-      });
-    } else {
-      linkRes = await supabase.auth.admin.generateLink({
-        type: "recovery",
-        email,
-        options: { redirectTo: redirectTo || undefined },
-      });
-    }
 
-    if (linkRes.error) {
-      console.error("generateLink failed:", linkRes.error.message);
-      const msg = linkRes.error.message.includes("already registered")
-        ? "Пользователь с таким email уже зарегистрирован"
-        : linkRes.error.message;
-      return new Response(JSON.stringify({ error: msg }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Do not expose whether the account exists or why link generation failed.
+    if (linkResult.error || !linkResult.data.properties?.action_link) {
+      if (linkResult.error) console.warn("auth link generation rejected", linkResult.error.message);
+      return response(GENERIC_RESPONSE, 202, origin);
     }
-
-    const actionLink = linkRes.data.properties?.action_link;
-    if (!actionLink) throw new Error("Не удалось сформировать ссылку");
 
     const html = type === "signup"
       ? renderEmail({
-        title: "Подтверждение регистрации",
-        intro:
-          `Привет${nickname ? `, ${nickname}` : ""}! Ты почти в системе MOKSUHUB. Подтверди почту, чтобы активировать аккаунт и получить доступ к заданиям, квестам и рейтингу.`,
-        buttonLabel: "Подтвердить почту",
-        link: actionLink,
-        note: "Ссылка действует ограниченное время. Если ты не регистрировался — просто проигнорируй это письмо.",
-      })
+          title: "Подтверждение регистрации",
+          intro: `Привет${typeof nickname === "string" && nickname ? `, ${nickname.slice(0, 20)}` : ""}! Подтверди почту, чтобы активировать аккаунт.`,
+          buttonLabel: "Подтвердить почту",
+          link: linkResult.data.properties.action_link,
+          note: "Если это были не вы — просто проигнорируйте письмо.",
+        })
       : renderEmail({
-        title: "Сброс пароля",
-        intro: "Мы получили запрос на сброс пароля от твоего аккаунта MOKSUHUB. Нажми кнопку ниже, чтобы задать новый пароль.",
-        buttonLabel: "Задать новый пароль",
-        link: actionLink,
-        note: "Если это был не ты — ничего делать не нужно, пароль останется прежним.",
-      });
+          title: "Сброс пароля",
+          intro: "Мы получили запрос на сброс пароля. Нажмите кнопку ниже, чтобы задать новый пароль.",
+          buttonLabel: "Задать новый пароль",
+          link: linkResult.data.properties.action_link,
+          note: "Если это были не вы — ничего делать не нужно.",
+        });
 
-    const resendRes = await fetch("https://api.resend.com/emails", {
+    const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -106,23 +160,13 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (!resendRes.ok) {
-      const details = await resendRes.text();
-      console.error(`Resend failed [${resendRes.status}]: ${details}`);
-      return new Response(
-        JSON.stringify({ error: "Не удалось отправить письмо", status: resendRes.status, details }),
-        { status: resendRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    if (!resendResponse.ok) {
+      console.error("Resend delivery failed", resendResponse.status);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    console.error("send-auth-email error:", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return response(GENERIC_RESPONSE, 202, origin);
+  } catch (error) {
+    console.error("send-auth-email failed", error instanceof Error ? error.message : "unknown error");
+    return response(JSON.stringify({ error: "Service unavailable" }), 503, origin);
   }
 });

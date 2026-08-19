@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { StaffRoute } from "@/components/auth/StaffRoute";
 import { Layout } from "@/components/layout/Layout";
 import Index from "./pages/Index";
 import Tasks from "./pages/Tasks";
@@ -49,7 +50,7 @@ const App = () => (
               <Route path="/review" element={<Review />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin" element={<StaffRoute allowedRoles={['admin']}><Admin /></StaffRoute>} />
               <Route path="/users" element={<Users />} />
               <Route path="/users/:id" element={<UserProfile />} />
               <Route path="/messages" element={<Messages />} />
@@ -61,9 +62,9 @@ const App = () => (
               <Route path="/quest" element={<Quest />} />
               <Route path="/guide" element={<Guide />} />
               
-              <Route path="/anticheat" element={<AnticheatPanel />} />
-              <Route path="/starosta" element={<StarostaPanel />} />
-              <Route path="/moderator" element={<ModeratorPanel />} />
+              <Route path="/anticheat" element={<StaffRoute allowedRoles={['anticheat']}><AnticheatPanel /></StaffRoute>} />
+              <Route path="/starosta" element={<StaffRoute allowedRoles={['starosta']}><StarostaPanel /></StaffRoute>} />
+              <Route path="/moderator" element={<StaffRoute allowedRoles={['moderator']}><ModeratorPanel /></StaffRoute>} />
               <Route path="/achievements" element={<Achievements />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

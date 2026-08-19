@@ -215,7 +215,7 @@ export default function Games() {
                                 </div>
                 <div>
                   <p className="font-medium">{GAME_NAMES[game?.game_type || 'tic-tac-toe']}</p>
-                  <p className="text-sm text-muted-foreground">Ставка: {game?.bet_amount || 1} балл</p>
+                  <p className="text-sm text-muted-foreground">Игра без ставки</p>
                 </div>
               </div>
 
@@ -258,7 +258,7 @@ export default function Games() {
               Игры
             </h1>
             <p className="text-muted-foreground mt-1">
-              Играйте с другими участниками за баллы
+              Играйте с другими участниками
             </p>
           </div>
           <div className="text-right space-y-1">
@@ -279,9 +279,8 @@ export default function Games() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>• Ставка за игру: <span className="font-bold text-foreground">{MIN_BET}-{MAX_BET} баллов</span></p>
-            <p>• Победитель получает: <span className="font-bold text-success">ставку × 2</span></p>
-            <p>• При ничьей баллы возвращаются обоим игрокам</p>
+            <p>• Игры проходят <span className="font-bold text-foreground">без ставок и начислений баллов</span></p>
+            <p>• Результаты игры не изменяют баланс участников</p>
             <p>• Между созданиями игр: <span className="font-bold text-foreground">5 мин задержка</span></p>
             <p>• Дневной лимит: <span className="font-bold text-warning">5 игр в день</span></p>
             <p>• Все действия требуют подтверждения (защита от ошибок)</p>
@@ -328,7 +327,6 @@ export default function Games() {
               <GameInviteCard
                 key={invite.id}
                 invite={invite}
-                userBalance={balance}
                 onAccept={handleAcceptInvite}
                 onDecline={declineInvite}
                 isLoading={invitesLoading}
@@ -360,9 +358,6 @@ export default function Games() {
                 title="Крестики-нолики"
                 description="Классическая игра 3x3"
                 icon={<div className="flex gap-1"><X className="h-5 w-5" /><Circle className="h-5 w-5" /></div>}
-                balance={balance}
-                minBet={MIN_BET}
-                maxBet={MAX_BET}
                 isLoading={isLoading}
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
@@ -372,9 +367,6 @@ export default function Games() {
                 title="Камень-ножницы-бумага"
                 description="Кто победит в этот раз?"
                 icon={<div className="flex gap-1"><Hand className="h-5 w-5" /><Scissors className="h-5 w-5" /></div>}
-                balance={balance}
-                minBet={MIN_BET}
-                maxBet={MAX_BET}
                 isLoading={isLoading}
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
@@ -384,9 +376,6 @@ export default function Games() {
                 title="Морской бой"
                 description="Потопите корабли противника!"
                 icon={<Ship className="h-5 w-5" />}
-                balance={balance}
-                minBet={MIN_BET}
-                maxBet={MAX_BET}
                 isLoading={isLoading}
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
@@ -396,9 +385,6 @@ export default function Games() {
                 title="Русская рулетка"
                 description="Испытай удачу!"
                 icon={<Target className="h-5 w-5" />}
-                balance={balance}
-                minBet={MIN_BET}
-                maxBet={MAX_BET}
                 isLoading={isLoading}
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
@@ -408,9 +394,6 @@ export default function Games() {
                 title="Четыре в ряд"
                 description="Соберите четыре фишки подряд"
                 icon={<div className="grid grid-cols-2 gap-1"><Circle className="h-4 w-4 text-red-500" /><Circle className="h-4 w-4 text-yellow-500" /><Circle className="h-4 w-4 text-yellow-500" /><Circle className="h-4 w-4 text-red-500" /></div>}
-                balance={balance}
-                minBet={MIN_BET}
-                maxBet={MAX_BET}
                 isLoading={isLoading}
                 cooldownActive={cooldownRemaining > 0}
                 onCreate={handleCreateGame}
@@ -485,9 +468,6 @@ function GameTypeCard({
   title, 
   description, 
   icon, 
-  balance, 
-  minBet,
-  maxBet,
   isLoading,
   cooldownActive,
   onCreate 
@@ -496,16 +476,11 @@ function GameTypeCard({
   title: string;
   description: string;
   icon: React.ReactNode;
-  balance: number;
-  minBet: number;
-  maxBet: number;
   isLoading: boolean;
   cooldownActive: boolean;
   onCreate: (type: GameType, betAmount: number) => Promise<void>;
 }) {
-  const [betAmount, setBetAmount] = useState(1);
-  
-  const canCreate = !isLoading && !cooldownActive && balance >= betAmount;
+  const canCreate = !isLoading && !cooldownActive;
   
   return (
     <Card className="hover:border-primary/50 transition-colors">
@@ -521,30 +496,9 @@ function GameTypeCard({
         </div>
         
         <div className="flex items-center justify-between gap-4">
-          {/* Bet selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Ставка:</span>
-            <div className="flex items-center gap-1">
-              {[...Array(maxBet - minBet + 1)].map((_, i) => {
-                const bet = minBet + i;
-                return (
-                  <Button
-                    key={bet}
-                    size="sm"
-                    variant={betAmount === bet ? "default" : "outline"}
-                    className="h-8 w-8 p-0"
-                    onClick={() => setBetAmount(bet)}
-                    disabled={balance < bet}
-                  >
-                    {bet}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-          
+          <span className="text-sm text-muted-foreground">Без ставки</span>
           <Button 
-            onClick={() => onCreate(type, betAmount)}
+            onClick={() => onCreate(type, 0)}
             disabled={!canCreate}
           >
             {isLoading ? (

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files: never commit credentials or deployment-specific configuration
+.env
+.env.*
+!.env.example

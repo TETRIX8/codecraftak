@@ -106,44 +106,13 @@ export function useResubmitSolution() {
     mutationFn: async ({ solutionId, code }: { solutionId: string; code: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Check review balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('review_balance')
-        .eq('id', user.id)
-        .single();
+      const { data: resubmittedSolutionId, error } = await supabase.rpc('resubmit_solution', {
+        _solution_id: solutionId,
+        _code: code,
+      });
 
-      if (!profile || profile.review_balance < 1) {
-        throw new Error('Недостаточно баллов проверки');
-      }
-
-      // Update solution with new code and reset status
-      const { data: solution, error: solutionError } = await supabase
-        .from('solutions')
-        .update({
-          code,
-          status: 'pending',
-          reviews_count: 0,
-          accepted_votes: 0,
-          rejected_votes: 0,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', solutionId)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (solutionError) throw solutionError;
-
-      // Deduct review balance
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ review_balance: profile.review_balance - 1 })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      return solution;
+      if (error) throw error;
+      return resubmittedSolutionId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solutions'] });
@@ -202,39 +171,13 @@ export function useSubmitSolution() {
     mutationFn: async ({ taskId, code }: { taskId: string; code: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // First, check review balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('review_balance')
-        .eq('id', user.id)
-        .single();
+      const { data: solutionId, error } = await supabase.rpc('submit_solution', {
+        _task_id: taskId,
+        _code: code,
+      });
 
-      if (!profile || profile.review_balance < 1) {
-        throw new Error('Недостаточно баллов проверки');
-      }
-
-      // Create solution
-      const { data: solution, error: solutionError } = await supabase
-        .from('solutions')
-        .insert({
-          task_id: taskId,
-          user_id: user.id,
-          code,
-        })
-        .select()
-        .single();
-
-      if (solutionError) throw solutionError;
-
-      // Deduct review balance
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ review_balance: profile.review_balance - 1 })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      return solution;
+      if (error) throw error;
+      return solutionId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solutions'] });
@@ -260,59 +203,14 @@ export function useSubmitReview() {
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Get current profile for weight calculation and daily review limit
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('trust_rating, reviews_completed, review_balance, daily_reviews_count, last_review_date')
-        .eq('id', user.id)
-        .single();
+      const { data: reviewId, error } = await supabase.rpc('submit_review', {
+        _solution_id: solutionId,
+        _verdict: verdict,
+        _comment: comment,
+      });
 
-      if (!profile) throw new Error('Profile not found');
-
-      // Check daily review limit
-      const today = new Date().toISOString().split('T')[0];
-      const lastReviewDate = profile.last_review_date;
-      const dailyCount = lastReviewDate === today ? (profile.daily_reviews_count || 0) : 0;
-
-      if (dailyCount >= 3) {
-        throw new Error('Лимит проверок на сегодня исчерпан (3 в день)');
-      }
-
-      // Calculate weight based on trust rating
-      const weight = (profile.trust_rating || 50) / 100;
-
-      // Create review
-      const { data: review, error: reviewError } = await supabase
-        .from('reviews')
-        .insert({
-          solution_id: solutionId,
-          reviewer_id: user.id,
-          verdict,
-          comment,
-          weight,
-        })
-        .select()
-        .single();
-
-      if (reviewError) throw reviewError;
-
-      // Update profile: increment review balance, reviews completed, and daily count
-      const newDailyCount = lastReviewDate === today ? dailyCount + 1 : 1;
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          review_balance: (profile.review_balance || 0) + 1,
-          reviews_completed: (profile.reviews_completed || 0) + 1,
-          daily_reviews_count: newDailyCount,
-          last_review_date: today,
-          last_activity_date: today,
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      return review;
+      if (error) throw error;
+      return reviewId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['solutions'] });

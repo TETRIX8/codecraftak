@@ -1182,10 +1182,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      award_game_winner: {
-        Args: { _game_id: string; _win_amount: number; _winner_id: string }
-        Returns: undefined
-      }
       calculate_trust_rating: {
         Args: {
           _correct_reviews: number
@@ -1203,10 +1199,6 @@ export type Database = {
           points_awarded: number
         }[]
       }
-      deduct_game_bet: {
-        Args: { _bet_amount: number; _game_id: string; _user_id: string }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1220,19 +1212,21 @@ export type Database = {
       }
       is_global_chat: { Args: { _chat_id: string }; Returns: boolean }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
-      log_point_transaction: {
-        Args: {
-          _amount: number
-          _description?: string
-          _reference_id?: string
-          _type: string
-          _user_id: string
-        }
-        Returns: undefined
+      resubmit_solution: {
+        Args: { _code: string; _solution_id: string }
+        Returns: string
       }
-      refund_game_bet: {
-        Args: { _bet_amount: number; _game_id: string; _user_id: string }
-        Returns: undefined
+      submit_review: {
+        Args: {
+          _comment?: string
+          _solution_id: string
+          _verdict: Database["public"]["Enums"]["review_verdict"]
+        }
+        Returns: string
+      }
+      submit_solution: {
+        Args: { _code: string; _task_id: string }
+        Returns: string
       }
     }
     Enums: {

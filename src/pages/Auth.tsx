@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type Mode = 'login' | 'signup' | 'forgot';
+type AuthEmailResponse = { error?: string; success?: boolean };
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>('login');
@@ -41,11 +42,12 @@ export default function Auth() {
             redirectTo: `${window.location.origin}/reset-password`,
           },
         });
-        if (error || (data as any)?.error) {
-          toast.error((data as any)?.error || 'Не удалось отправить письмо');
+        const responseData = data as AuthEmailResponse | null;
+        if (error || responseData?.error) {
+          toast.error(responseData?.error || 'Не удалось отправить письмо');
         } else {
           setSentTo(email);
-          toast.success('Письмо со ссылкой для сброса пароля отправлено');
+          toast.success('Если адрес поддерживается сервисом, письмо будет отправлено.');
         }
       } else if (isLogin) {
         const { error } = await signIn(email, password);
@@ -67,8 +69,8 @@ export default function Auth() {
           setLoading(false);
           return;
         }
-        if (password.length < 6) {
-          toast.error('Пароль должен быть не менее 6 символов');
+        if (password.length < 12) {
+          toast.error('Пароль должен быть не менее 12 символов');
           setLoading(false);
           return;
         }
@@ -83,11 +85,12 @@ export default function Auth() {
             redirectTo: `${window.location.origin}/`,
           },
         });
-        if (error || (data as any)?.error) {
-          toast.error((data as any)?.error || 'Не удалось зарегистрироваться');
+        const responseData = data as AuthEmailResponse | null;
+        if (error || responseData?.error) {
+          toast.error(responseData?.error || 'Не удалось зарегистрироваться');
         } else {
           setSentTo(email);
-          toast.success('Проверьте почту — мы отправили письмо для подтверждения');
+          toast.success('Если адрес поддерживается сервисом, письмо будет отправлено.');
         }
       }
     } catch (err) {
@@ -230,7 +233,7 @@ export default function Auth() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10 bg-background"
                   required
-                  minLength={6}
+                  minLength={isSignup ? 12 : 1}
                 />
                 <button
                   type="button"

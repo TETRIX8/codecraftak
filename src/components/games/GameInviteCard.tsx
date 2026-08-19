@@ -30,7 +30,6 @@ import {
 
 interface GameInviteCardProps {
   invite: GameInvite;
-  userBalance: number;
   onAccept: (inviteId: string, gameId: string) => void;
   onDecline: (inviteId: string) => void;
   isLoading: boolean;
@@ -46,13 +45,12 @@ const GAME_NAMES: Record<string, string> = {
 
 export function GameInviteCard({ 
   invite, 
-  userBalance, 
   onAccept, 
   onDecline,
   isLoading 
 }: GameInviteCardProps) {
   const gameType = invite.game?.game_type || 'tic-tac-toe';
-  const canAccept = userBalance >= 1;
+  const canAccept = true;
 
   const GameIcon = () => {
     switch (gameType) {
@@ -139,10 +137,8 @@ export function GameInviteCard({
                     Вы принимаете приглашение на игру <strong>{GAME_NAMES[gameType]}</strong> от <strong>{invite.sender?.nickname}</strong>.
                     <br /><br />
                     <span className="text-yellow-500 font-medium">
-                      Ставка: 1 балл. Победитель получает 2 балла.
+                      Игра проходит без ставки и не изменяет баланс.
                     </span>
-                    <br /><br />
-                    Ваш текущий баланс: <strong>{userBalance} баллов</strong>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -156,11 +152,6 @@ export function GameInviteCard({
           </div>
         </div>
         
-        {!canAccept && (
-          <p className="text-sm text-destructive mt-2">
-            Недостаточно баллов для игры (нужен 1 балл)
-          </p>
-        )}
       </CardContent>
     </Card>
   );
