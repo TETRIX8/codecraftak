@@ -125,8 +125,7 @@ export function useLeaderboard() {
             return (b.reviews_completed || 0) - (a.reviews_completed || 0);
           }
           return (b.trust_rating || 0) - (a.trust_rating || 0);
-        })
-        .slice(0, 20) as LeaderboardProfile[];
+        }) as LeaderboardProfile[];
     },
   });
 }

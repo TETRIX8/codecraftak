@@ -1,247 +1,73 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, Home, ListTodo, CheckSquare, User, Trophy, Menu, X, LogOut, Settings, Users, MessageSquare, BookOpen, Gamepad2, Shield, Calendar, Eye, Map } from 'lucide-react';
+import { Archive, BookOpen, Home, Menu, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
-import { useIsAdmin, useIsAnticheat, useIsStarosta, useIsModerator } from '@/hooks/useRoles';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
   { path: '/', label: 'Главная', icon: Home },
-  { path: '/tasks', label: 'Задания', icon: ListTodo },
-  { path: '/review', label: 'Проверка', icon: CheckSquare },
-  { path: '/games', label: 'Игры', icon: Gamepad2 },
-  { path: '/quest', label: 'Квест', icon: Map },
   { path: '/topics', label: 'Темы', icon: BookOpen },
-  { path: '/users', label: 'Участники', icon: Users },
-  { path: '/messages', label: 'Чаты', icon: MessageSquare },
   { path: '/leaderboard', label: 'Рейтинг', icon: Trophy },
-  { path: '/profile', label: 'Профиль', icon: User },
 ];
 
 export function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
-  const { data: profile } = useProfile();
-  const { isAdmin } = useIsAdmin();
-  const { isAnticheat } = useIsAnticheat();
-  const { isStarosta } = useIsStarosta();
-  const { isModerator } = useIsModerator();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Code2 className="w-5 h-5 text-background" />
-              </div>
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-accent opacity-0 group-hover:opacity-50 blur-xl transition-opacity" />
+        <div className="flex h-16 items-center justify-between">
+          <Link to="/" className="flex items-center gap-3" aria-label="MOKSUHUB — главная">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+              <Archive className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-xl font-bold hidden sm:block">
-              MOKSU<span className="gradient-text">HUB</span>
-            </span>
+            <div className="leading-none">
+              <span className="block text-sm font-extrabold tracking-[0.12em]">MOKSUHUB</span>
+              <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">закрытый проект</span>
+            </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden items-center gap-1 md:flex">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
               return (
-                <Link key={item.path} to={item.path}>
-                  <motion.div
+                <Link key={item.path} to={item.path} className="relative">
+                  <motion.span
+                    whileHover={{ y: -1 }}
                     className={cn(
-                      "relative px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+                      'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                      isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
                     )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                   >
-                    <item.icon className="w-4 h-4" />
+                    <item.icon className="h-4 w-4" />
                     {item.label}
-                    {isActive && (
-                      <motion.div
-                        layoutId="navbar-indicator"
-                        className="absolute inset-0 bg-primary/10 rounded-lg -z-10"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                  </motion.div>
+                    {isActive && <motion.span layoutId="archive-nav" className="absolute inset-0 -z-10 rounded-lg bg-primary/10" />}
+                  </motion.span>
                 </Link>
               );
             })}
           </div>
 
-          {/* Auth Section */}
-          <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <>
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="outline" size="sm">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Админ
-                    </Button>
-                  </Link>
-                )}
-                {isAnticheat && !isAdmin && (
-                  <Link to="/anticheat">
-                    <Button variant="outline" size="sm">
-                      <Shield className="w-4 h-4 mr-2" />
-                      Античит
-                    </Button>
-                  </Link>
-                )}
-                {isModerator && !isAdmin && (
-                  <Link to="/moderator">
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Модератор
-                    </Button>
-                  </Link>
-                )}
-                {isStarosta && !isAdmin && (
-                  <Link to="/starosta">
-                    <Button variant="outline" size="sm">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Староста
-                    </Button>
-                  </Link>
-                )}
-                <NotificationBell />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-medium">{profile?.review_balance ?? 0} балл(ов)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link to="/profile">
-                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-border">
-                      <img 
-                        src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`}
-                        alt={profile?.nickname || 'User'}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </Link>
-                  <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <Link to="/auth">
-                <Button variant="gradient" size="sm">
-                  Войти
-                </Button>
-              </Link>
-            )}
+          <div className="hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground md:flex">
+            created by <span className="text-foreground">A-Kproject</span>
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen((value) => !value)} aria-label="Открыть меню">
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden py-4 border-t border-border"
-          >
-            <div className="flex flex-col gap-2">
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-secondary"
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-              <div className="pt-4 mt-2 border-t border-border">
-                {user ? (
-                  <div className="space-y-3">
-                    {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full mb-2">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Админ-панель
-                        </Button>
-                      </Link>
-                    )}
-                    {isAnticheat && !isAdmin && (
-                      <Link to="/anticheat" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full mb-2">
-                          <Shield className="w-4 h-4 mr-2" />
-                          Античит-панель
-                        </Button>
-                      </Link>
-                    )}
-                    {isModerator && !isAdmin && (
-                      <Link to="/moderator" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full mb-2">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Модератор-панель
-                        </Button>
-                      </Link>
-                    )}
-                    {isStarosta && !isAdmin && (
-                      <Link to="/starosta" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full mb-2">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Староста-панель
-                        </Button>
-                      </Link>
-                    )}
-                    <div className="flex items-center gap-2 px-4">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                      <span className="text-sm">{profile?.review_balance ?? 0} балл(ов)</span>
-                    </div>
-                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Выйти
-                    </Button>
-                  </div>
-                ) : (
-                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="gradient" className="w-full">
-                      Войти
-                    </Button>
-                  </Link>
-                )}
-              </div>
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border-t border-border py-3 md:hidden">
+            <div className="flex flex-col gap-1">
+              {navItems.map((item) => (
+                <Link key={item.path} to={item.path} onClick={() => setMobileMenuOpen(false)} className={cn('flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium', location.pathname === item.path ? 'bg-primary/10 text-primary' : 'text-muted-foreground')}>
+                  <item.icon className="h-5 w-5" /> {item.label}
+                </Link>
+              ))}
+              <p className="px-4 pt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">created by A-Kproject</p>
             </div>
           </motion.div>
         )}

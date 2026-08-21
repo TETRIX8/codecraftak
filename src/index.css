@@ -188,6 +188,14 @@
     animation: grid-pan 20s linear infinite;
   }
 
+  .archive-grid {
+    background-image:
+      linear-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
+  }
+
   .text-balance {
     text-wrap: balance;
   }
